@@ -9,7 +9,7 @@ export function Logo({ className }: LogoProps) {
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
       <Image
-        src="/icon.png"
+        src="/icon.svg"
         alt="FolioLabs"
         width={32}
         height={32}
