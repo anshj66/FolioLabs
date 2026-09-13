@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
@@ -11,13 +12,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 export function LoginForm() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("maya.chen@foliolabs.io")
-  const [password, setPassword] = useState("password")
+  const [email, setEmail] = useState("user@pilani.bits-pilani.ac.in")
+  const [password, setPassword] = useState("comingsoon")
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-
+    router.push("/dashboard")
   }
 
   return (
