@@ -6,21 +6,26 @@ import {
   Briefcase,
   FlaskConical,
   LayoutDashboard,
+  Award,
+  BookOpen,
+  Settings,
+  Shield,
   Sparkles,
-  Target,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Logo } from "@/components/logo"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { user } from "@/lib/data"
+import { demoUser } from "@/lib/demo-data"
 
 const nav: { label: string; href: string; icon: LucideIcon }[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { label: "Projects", href: "/dashboard/projects", icon: Briefcase },
-  { label: "AcademicLab", href: "/dashboard/academiclab", icon: FlaskConical },
-  { label: "Opportunities", href: "/dashboard/opportunities", icon: Target },
-  { label: "Portfolio", href: "/dashboard/portfolio", icon: Sparkles },
+  { label: "Lab", href: "/dashboard/lab", icon: FlaskConical },
+  { label: "Evidence", href: "/dashboard/evidence", icon: BookOpen },
+  { label: "Defense", href: "/dashboard/defense", icon: Shield },
+  { label: "Portfolio", href: "/dashboard/portfolio", icon: Award },
+  { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ]
 
 export function Sidebar() {
@@ -71,14 +76,14 @@ export function Sidebar() {
       <div className="flex items-center gap-3 border-t border-border p-4">
         <Avatar className="size-9">
           <AvatarFallback className="bg-primary/15 text-sm font-medium text-primary">
-            {user.initials}
+            AM
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">
-            {user.name}
+            {demoUser.name}
           </p>
-          <p className="truncate text-xs text-muted-foreground">{user.role}</p>
+          <p className="truncate text-xs text-muted-foreground">{demoUser.institution} · Student</p>
         </div>
       </div>
     </aside>
