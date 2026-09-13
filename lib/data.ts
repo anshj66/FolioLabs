@@ -1,8 +1,8 @@
 export const user = {
-  name: "Maya Chen",
-  email: "maya.chen@foliolabs.io",
-  initials: "MC",
-  role: "Research Fellow",
+  name: "ABC",
+  email: "abc@pilani.bits-pilani.ac.in",
+  initials: "AB",
+  role: "Student Researcher",
 }
 
 export const stats = {
@@ -50,8 +50,8 @@ export const activeProjects = [
 export const opportunities = [
   {
     id: 1,
-    title: "MIT Summer Research Grant",
-    org: "MIT Media Lab",
+    title: "BITS Pilani Summer Research Grant",
+    org: "BITS Pilani Research Cell",
     type: "Grant",
     amount: "$12,000",
     deadline: "5 days left",

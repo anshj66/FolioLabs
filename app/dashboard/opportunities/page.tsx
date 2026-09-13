@@ -1,10 +1,17 @@
-import { ComingSoon } from "@/components/coming-soon"
+import { ArrowUpRight, Building2, CheckCircle2, MapPin, Target } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+const opportunities = [
+  { title: "Research Assistant — Network Science", organization: "BITS Pilani Research Cell", location: "Cambridge, MA · Hybrid", match: "96% match", reason: "Your graph theory project and verified eigenvalue work are a strong fit.", tags: ["Research", "Networks", "Paid"] },
+  { title: "Open Source Fellowship", organization: "Civic Data Lab", location: "Remote", match: "89% match", reason: "Your implementation evidence shows the exact collaboration pattern they seek.", tags: ["Fellowship", "Python", "Remote"] },
+  { title: "Applied Mathematics Summer Lab", organization: "Institute for Advanced Study", location: "Princeton, NJ", match: "84% match", reason: "Your reflections and faculty review make your application stand out.", tags: ["Summer", "Mathematics", "Mentored"] },
+]
 
 export default function OpportunitiesPage() {
-  return (
-    <ComingSoon
-      title="Opportunities"
-      description="Discover grants, fellowships, and conferences tailored to you."
-    />
-  )
+  return <div className="mx-auto flex max-w-6xl flex-col gap-8">
+    <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-sm font-medium uppercase tracking-[.18em] text-primary">Opportunity radar</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Find work that fits your evidence.</h1><p className="mt-2 max-w-2xl text-muted-foreground">Greenhouse Engine matches the proof you have already built to opportunities where it matters.</p></div><Button><Target data-icon="inline-start" /> Refresh matches</Button></div>
+    <div className="grid gap-4 sm:grid-cols-3"><Card><CardContent className="p-5"><p className="text-2xl font-semibold">12</p><p className="mt-1 text-sm text-muted-foreground">open matches</p></CardContent></Card><Card><CardContent className="p-5"><p className="text-2xl font-semibold text-primary">91%</p><p className="mt-1 text-sm text-muted-foreground">average fit score</p></CardContent></Card><Card><CardContent className="p-5"><p className="text-2xl font-semibold">4</p><p className="mt-1 text-sm text-muted-foreground">saved opportunities</p></CardContent></Card></div>
+    <section className="grid gap-4">{opportunities.map((opportunity) => <Card key={opportunity.title} className="transition-colors hover:border-primary/40"><CardHeader><div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div className="flex gap-3"><div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary"><Building2 className="size-5" /></div><div><CardTitle>{opportunity.title}</CardTitle><CardDescription className="mt-1">{opportunity.organization}</CardDescription></div></div><span className="w-fit rounded-full bg-primary/12 px-3 py-1 text-xs font-semibold text-primary">{opportunity.match}</span></div></CardHeader><CardContent><div className="flex flex-wrap gap-2 text-xs text-muted-foreground"><span className="inline-flex items-center gap-1"><MapPin className="size-3.5" />{opportunity.location}</span>{opportunity.tags.map((tag) => <span key={tag} className="rounded-full bg-secondary px-2.5 py-1">{tag}</span>)}</div><p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">{opportunity.reason}</p><div className="mt-5 flex flex-wrap gap-2"><Button size="sm">View opportunity <ArrowUpRight data-icon="inline-end" /></Button><Button size="sm" variant="outline"><CheckCircle2 data-icon="inline-start" /> Save</Button></div></CardContent></Card>)}</section>
+  </div>
 }

@@ -1,0 +1,4 @@
+"use client"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+export default function ReflectionPage() { const [saved, setSaved] = useState(false); return <main className="mx-auto flex max-w-3xl flex-col gap-6 p-6"><p className="text-sm font-medium text-primary">Project reflection</p><h1 className="text-3xl font-semibold">What changed in your thinking?</h1><p className="text-muted-foreground">Your reflection connects decisions to evidence and makes the learning process visible.</p><textarea className="min-h-48 w-full rounded-xl border border-border bg-background p-4 text-sm outline-none focus:ring-2 focus:ring-ring" placeholder="I changed the vector direction because..." />{saved ? <p className="text-sm text-primary">Reflection saved to the evidence timeline.</p> : <Button className="self-start" onClick={() => setSaved(true)}>Save reflection</Button>}</main> }
