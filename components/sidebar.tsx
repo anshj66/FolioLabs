@@ -1,6 +1,6 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import {
   Briefcase,
@@ -17,6 +17,7 @@ import {
   ClipboardCheck,
   MessageSquare,
   Users,
+  LogOut,
   Search,
   Presentation,
   Globe2,
@@ -33,7 +34,7 @@ const nav: { label: string; href: string; icon: LucideIcon; group: string }[] = 
   { label: "Learning Lab", href: "/dashboard/lab", icon: FlaskConical, group: "Learn & Build" },
   { label: "AI Mentor", href: "/dashboard/mentor", icon: BrainCircuit, group: "Learn & Build" },
   { label: "Assessments", href: "/dashboard/assessment", icon: ClipboardCheck, group: "Learn & Build" },
-  { label: "Opportunities", href: "/dashboard/opportunities", icon: Target, group: "Learn & Build" },
+  { label: "Opportunities", href: "/dashboard/opportunities", icon: Target, group: "Prove & Launch" },
   { label: "Greenhouse Engine", href: "/dashboard/academiclab", icon: Sprout, group: "Learn & Build" },
   { label: "Feedback", href: "/dashboard/feedback", icon: MessageSquare, group: "Collaborate & Validate" },
   { label: "Peer Review", href: "/dashboard/peer-review", icon: Users, group: "Collaborate & Validate" },
@@ -48,6 +49,7 @@ const nav: { label: string; href: string; icon: LucideIcon; group: string }[] = 
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
 
   return (
     <aside className="flex h-full w-full flex-col bg-sidebar">
@@ -89,6 +91,9 @@ export function Sidebar() {
           </p>
           <p className="truncate text-xs text-muted-foreground">{demoUser.institution} · Student</p>
         </div>
+        <button type="button" onClick={() => router.push("/welcome")} className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" aria-label="Log out" title="Log out">
+          <LogOut className="size-4" />
+        </button>
       </div>
     </aside>
   )
