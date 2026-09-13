@@ -10,11 +10,11 @@ import type {
 
 export const demoUser: User = {
   id: 'user-1',
-  name: 'Alex Morgan',
-  email: 'alex.morgan@university.edu',
+  name: 'ABC',
+  email: 'abc@pilani.bits-pilani.ac.in',
   role: 'student',
-  bio: 'Studying computational mathematics and linear algebra applications in network analysis.',
-  institution: 'MIT',
+  bio: 'Student researcher at BITS Pilani exploring computational mathematics and network analysis.',
+  institution: 'BITS Pilani',
   authenticityScore: 94,
 }
 
@@ -157,7 +157,7 @@ export const demoReviews: FacultyReview[] = [
       email: 's.chen@university.edu',
       role: 'faculty',
       avatar: '',
-      institution: 'MIT',
+      institution: 'BITS Pilani',
     },
     rating: 5,
     feedback:
@@ -174,7 +174,7 @@ export const demoReviews: FacultyReview[] = [
       email: 'j.williams@university.edu',
       role: 'faculty',
       avatar: '',
-      institution: 'MIT',
+      institution: 'BITS Pilani',
     },
     rating: 5,
     feedback:

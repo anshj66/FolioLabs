@@ -11,7 +11,7 @@ export default function DashboardPage() {
         <div className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
         <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">Tuesday, September 23, 2025</p>
+            <p className="text-sm text-muted-foreground">Tuesday, September 23, 2026</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">Good morning, {demoUser.name.split(' ')[0]}.</h1>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">Your learning evidence is building momentum. You have one defense to prepare for and three items ready for faculty review.</p>
           </div>

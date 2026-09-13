@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 export function LoginForm() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("user@pilani.bits-pilani.ac.in")
+  const [email, setEmail] = useState("abc@pilani.bits-pilani.ac.in")
   const [password, setPassword] = useState("comingsoon")
 
   function handleSubmit(e: React.FormEvent) {

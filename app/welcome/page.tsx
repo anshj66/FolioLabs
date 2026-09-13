@@ -104,7 +104,7 @@ export default function HomePage() {
 
       <section id="start" className="px-5 py-24 lg:px-8"><div className="mx-auto grid max-w-7xl items-center gap-10 rounded-[1.75rem] border border-primary/25 bg-primary/10 p-8 sm:p-12 lg:grid-cols-[1fr_auto]"><div><p className="text-sm font-medium uppercase tracking-[.18em] text-primary">Start with one honest project</p><h2 className="mt-4 max-w-2xl text-balance text-3xl font-semibold tracking-tight sm:text-5xl">Your next opportunity should see more than the final file.</h2><p className="mt-5 max-w-xl text-sm leading-6 text-muted-foreground">Bring the questions, iterations, and decisions with you. That is where the real signal lives.</p></div><Button size="lg" className="w-full sm:w-auto" asChild><Link href="/signin">Open your workspace <ArrowRight data-icon="inline-end" /></Link></Button></div></section>
 
-      <footer className="border-t border-border px-5 py-8 lg:px-8"><div className="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><Logo /><div className="flex items-center gap-5 text-xs text-muted-foreground"><span className="inline-flex items-center gap-2"><Users className="size-3.5" /> Built for thoughtful work</span><span>© 2026 FolioLabs</span></div></div></footer>
+      <footer className="border-t border-border px-5 py-8 lg:px-8"><div className="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><Logo /><div className="flex items-center gap-5 text-xs text-muted-foreground"><span className="inline-flex items-center gap-2"><Users className="size-3.5" /> Built for thoughtful work</span><span>ABC · BITS Pilani · © 2026 FolioLabs</span></div></div></footer>
     </main>
   )
 }

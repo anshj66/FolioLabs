@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 const opportunities = [
-  { title: "Research Assistant — Network Science", organization: "MIT Media Lab", location: "Cambridge, MA · Hybrid", match: "96% match", reason: "Your graph theory project and verified eigenvalue work are a strong fit.", tags: ["Research", "Networks", "Paid"] },
+  { title: "Research Assistant — Network Science", organization: "BITS Pilani Research Cell", location: "Cambridge, MA · Hybrid", match: "96% match", reason: "Your graph theory project and verified eigenvalue work are a strong fit.", tags: ["Research", "Networks", "Paid"] },
   { title: "Open Source Fellowship", organization: "Civic Data Lab", location: "Remote", match: "89% match", reason: "Your implementation evidence shows the exact collaboration pattern they seek.", tags: ["Fellowship", "Python", "Remote"] },
   { title: "Applied Mathematics Summer Lab", organization: "Institute for Advanced Study", location: "Princeton, NJ", match: "84% match", reason: "Your reflections and faculty review make your application stand out.", tags: ["Summer", "Mathematics", "Mentored"] },
 ]
