@@ -117,6 +117,61 @@ export interface Stats {
   collaborators: number
 }
 
+export type EvidenceEventType = 'experiment' | 'parameter_change' | 'reflection' | 'ai_interaction' | 'feedback' | 'assessment' | 'submission' | 'revision' | 'defense' | 'faculty_validation'
+
+export interface EvidenceEvent {
+  id: string
+  projectId: string
+  type: EvidenceEventType
+  title: string
+  description: string
+  createdAt: string
+  verified: boolean
+  metadata?: Record<string, string | number>
+}
+
+export interface Reflection {
+  id: string
+  projectId: string
+  prompt: string
+  response: string
+  createdAt: string
+}
+
+export interface AssessmentAttempt {
+  id: string
+  projectId: string
+  score: number
+  total: number
+  completedAt: string
+}
+
+export interface ResearchOpportunity {
+  id: string
+  projectId: string
+  title: string
+  description: string
+  faculty: string
+  status: 'potential' | 'active' | 'published'
+}
+
+export interface Notification {
+  id: string
+  title: string
+  description: string
+  type: 'feedback' | 'milestone' | 'defense' | 'research' | 'verification'
+  read: boolean
+  createdAt: string
+}
+
+export interface Competency {
+  id: string
+  name: string
+  score: number
+  evidenceCount: number
+  verified: boolean
+}
+
 export interface TimelineEvent {
   id: string
   projectId: string

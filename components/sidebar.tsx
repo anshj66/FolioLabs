@@ -13,6 +13,13 @@ import {
   Target,
   Sprout,
   Sparkles,
+  BrainCircuit,
+  ClipboardCheck,
+  MessageSquare,
+  Users,
+  Search,
+  Presentation,
+  Globe2,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -20,17 +27,23 @@ import { Logo } from "@/components/logo"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { demoUser } from "@/lib/demo-data"
 
-const nav: { label: string; href: string; icon: LucideIcon }[] = [
-  { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Projects", href: "/dashboard/projects", icon: Briefcase },
-  { label: "Opportunities", href: "/dashboard/opportunities", icon: Target },
-  { label: "Greenhouse Engine", href: "/dashboard/academiclab", icon: Sprout },
-  { label: "Learning Lab", href: "/dashboard/lab", icon: FlaskConical },
-  { label: "Evidence", href: "/dashboard/evidence", icon: BookOpen },
-  { label: "Defense", href: "/dashboard/defense", icon: Shield },
-  { label: "Faculty", href: "/dashboard/faculty", icon: Award },
-  { label: "Portfolio", href: "/dashboard/portfolio", icon: Award },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings },
+const nav: { label: string; href: string; icon: LucideIcon; group: string }[] = [
+  { label: "Overview", href: "/dashboard", icon: LayoutDashboard, group: "Learn & Build" },
+  { label: "My Projects", href: "/dashboard/projects", icon: Briefcase, group: "Learn & Build" },
+  { label: "Learning Lab", href: "/dashboard/lab", icon: FlaskConical, group: "Learn & Build" },
+  { label: "AI Mentor", href: "/dashboard/mentor", icon: BrainCircuit, group: "Learn & Build" },
+  { label: "Assessments", href: "/dashboard/assessment", icon: ClipboardCheck, group: "Learn & Build" },
+  { label: "Opportunities", href: "/dashboard/opportunities", icon: Target, group: "Learn & Build" },
+  { label: "Greenhouse Engine", href: "/dashboard/academiclab", icon: Sprout, group: "Learn & Build" },
+  { label: "Feedback", href: "/dashboard/feedback", icon: MessageSquare, group: "Collaborate & Validate" },
+  { label: "Peer Review", href: "/dashboard/peer-review", icon: Users, group: "Collaborate & Validate" },
+  { label: "Faculty Review", href: "/dashboard/faculty", icon: Award, group: "Collaborate & Validate" },
+  { label: "Evidence", href: "/dashboard/evidence", icon: BookOpen, group: "Collaborate & Validate" },
+  { label: "Defense", href: "/dashboard/defense", icon: Shield, group: "Prove & Launch" },
+  { label: "Portfolio", href: "/dashboard/portfolio", icon: Award, group: "Prove & Launch" },
+  { label: "Research", href: "/dashboard/research", icon: Search, group: "Prove & Launch" },
+  { label: "Showcase", href: "/dashboard/showcase", icon: Globe2, group: "Prove & Launch" },
+  { label: "Settings", href: "/dashboard/settings", icon: Settings, group: "Account" },
 ]
 
 export function Sidebar() {
@@ -43,29 +56,15 @@ export function Sidebar() {
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
-        <p className="px-3 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Menu
-        </p>
-        {nav.map((item) => {
-          const active = pathname === item.href
-          return (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                active
-                  ? "bg-sidebar-accent text-foreground"
-                  : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
-              )}
-            >
-              <item.icon
-                className={cn("size-4.5", active && "text-primary")}
-              />
-              {item.label}
-            </Link>
-          )
-        })}
+        {["Learn & Build", "Collaborate & Validate", "Prove & Launch", "Account"].map((group) => (
+          <div key={group} className="flex flex-col gap-1">
+            <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70 first:pt-0">{group}</p>
+            {nav.filter((item) => item.group === group).map((item) => {
+              const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
+              return <Link key={item.label} href={item.href} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors", active ? "bg-sidebar-accent text-foreground" : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground")}><item.icon className={cn("size-4", active && "text-primary")} />{item.label}</Link>
+            })}
+          </div>
+        ))}
       </nav>
 
       <div className="m-3 rounded-xl border border-border bg-card p-4">
