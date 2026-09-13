@@ -1,10 +1,18 @@
-import { ComingSoon } from "@/components/coming-soon"
+import { ArrowRight, BrainCircuit, CheckCircle2, CircleDot, Leaf, Sparkles } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+const signals = [
+  { label: "Evidence strength", value: "Strong", detail: "8 artifacts connected to active work" },
+  { label: "Opportunity fit", value: "91%", detail: "Across 12 relevant opportunities" },
+  { label: "Next growth edge", value: "Communication", detail: "Explain your methods to a non-specialist" },
+]
 
 export default function AcademicLabPage() {
-  return (
-    <ComingSoon
-      title="AcademicLab"
-      description="Your collaborative lab space for experiments and datasets."
-    />
-  )
+  return <div className="mx-auto flex max-w-6xl flex-col gap-8">
+    <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-sm font-medium uppercase tracking-[.18em] text-primary">Greenhouse Engine</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Turn evidence into momentum.</h1><p className="mt-2 max-w-2xl text-muted-foreground">A living view of your strengths, growth edges, and the next opportunities worth cultivating.</p></div><Button><Sparkles data-icon="inline-start" /> Run growth scan</Button></div>
+    <Card className="overflow-hidden border-primary/20 bg-primary/5"><CardContent className="grid gap-8 p-6 md:grid-cols-[1.2fr_.8fr] md:p-8"><div><div className="flex items-center gap-2 text-sm font-medium text-primary"><Leaf className="size-4" /> Current season: Deepening</div><h2 className="mt-4 max-w-xl text-2xl font-semibold tracking-tight">You are ready to move from doing strong work to explaining its value.</h2><p className="mt-3 max-w-xl leading-7 text-muted-foreground">Your portfolio has a clear technical signal. The next step is to connect your methods to impact, audience, and the opportunities you want.</p><Button className="mt-6">Open growth plan <ArrowRight data-icon="inline-end" /></Button></div><div className="flex items-center justify-center"><div className="relative flex size-40 items-center justify-center rounded-full border-8 border-primary/20 bg-background"><div className="absolute inset-2 rounded-full border border-primary/30" /><div className="text-center"><p className="text-4xl font-semibold">82</p><p className="text-xs uppercase tracking-wider text-muted-foreground">momentum</p></div></div></div></CardContent></Card>
+    <div className="grid gap-4 md:grid-cols-3">{signals.map((signal) => <Card key={signal.label}><CardHeader><CardDescription>{signal.label}</CardDescription><CardTitle className="text-2xl">{signal.value}</CardTitle></CardHeader><CardContent><p className="text-sm leading-6 text-muted-foreground">{signal.detail}</p></CardContent></Card>)}</div>
+    <div className="grid gap-4 lg:grid-cols-[1.2fr_.8fr]"><Card><CardHeader><CardTitle>Recommended next moves</CardTitle><CardDescription>Small actions that compound your portfolio signal.</CardDescription></CardHeader><CardContent className="grid gap-3">{["Add a reflection to your Community Detection project", "Practice your two-minute project explanation", "Invite Dr. Sarah Chen to verify your latest artifact"].map((item, index) => <div key={item} className="flex items-start gap-3 rounded-xl border border-border p-4"><div className="mt-0.5 text-primary">{index === 0 ? <CircleDot className="size-4" /> : index === 1 ? <BrainCircuit className="size-4" /> : <CheckCircle2 className="size-4" />}</div><p className="text-sm leading-6">{item}</p></div>)}</CardContent></Card><Card><CardHeader><CardTitle>What is activated</CardTitle><CardDescription>Your workspace is ready to use.</CardDescription></CardHeader><CardContent className="flex flex-col gap-3 text-sm">{["Opportunity matching", "Evidence graph", "Faculty verification", "Portfolio health"].map((item) => <div key={item} className="flex items-center gap-2"><CheckCircle2 className="size-4 text-primary" />{item}</div>)}</CardContent></Card></div>
+  </div>
 }

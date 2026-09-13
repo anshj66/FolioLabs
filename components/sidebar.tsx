@@ -10,6 +10,8 @@ import {
   BookOpen,
   Settings,
   Shield,
+  Target,
+  Sprout,
   Sparkles,
   type LucideIcon,
 } from "lucide-react"
@@ -21,9 +23,12 @@ import { demoUser } from "@/lib/demo-data"
 const nav: { label: string; href: string; icon: LucideIcon }[] = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { label: "Projects", href: "/dashboard/projects", icon: Briefcase },
-  { label: "Lab", href: "/dashboard/lab", icon: FlaskConical },
+  { label: "Opportunities", href: "/dashboard/opportunities", icon: Target },
+  { label: "Greenhouse Engine", href: "/dashboard/academiclab", icon: Sprout },
+  { label: "Learning Lab", href: "/dashboard/lab", icon: FlaskConical },
   { label: "Evidence", href: "/dashboard/evidence", icon: BookOpen },
   { label: "Defense", href: "/dashboard/defense", icon: Shield },
+  { label: "Faculty", href: "/dashboard/faculty", icon: Award },
   { label: "Portfolio", href: "/dashboard/portfolio", icon: Award },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ]

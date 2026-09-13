@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { Logo } from "@/components/logo"
 
 const workflow = [
@@ -44,8 +45,8 @@ export default function HomePage() {
             <Button variant="ghost" size="sm" onClick={() => scrollTo("features")}>Features</Button>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Sign in</Button>
-            <Button size="sm" onClick={() => scrollTo("start")}>Start building <ArrowRight data-icon="inline-end" /></Button>
+            <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild><Link href="/signin">Sign in</Link></Button>
+            <Button size="sm" asChild><Link href="/signin">Start building <ArrowRight data-icon="inline-end" /></Link></Button>
           </div>
         </div>
       </nav>
@@ -65,7 +66,7 @@ export default function HomePage() {
               FolioLabs helps you turn projects, experiments, and reflection into a portfolio with substance — one that shows how you think, not just what you finished.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" onClick={() => scrollTo("start")}>Build your portfolio <ArrowRight data-icon="inline-end" /></Button>
+              <Button size="lg" asChild><Link href="/signin">Build your portfolio <ArrowRight data-icon="inline-end" /></Link></Button>
               <Button size="lg" variant="outline" onClick={() => scrollTo("workflow")}>See the workflow</Button>
             </div>
             <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-xs text-muted-foreground">
@@ -101,7 +102,7 @@ export default function HomePage() {
 
       <section id="features" className="bg-card/30 px-5 py-24 lg:px-8"><div className="mx-auto max-w-7xl"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-sm font-medium uppercase tracking-[.18em] text-primary">Designed for depth</p><h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-5xl">Your process deserves a home.</h2></div><p className="max-w-md text-sm leading-6 text-muted-foreground">Everything is designed to help you make better decisions, tell a clearer story, and invite the right people into your learning.</p></div><div className="mt-14 grid gap-5 lg:grid-cols-3">{features.map((feature) => <div key={feature.title} className="rounded-2xl border border-border bg-background p-7"><div className="flex size-11 items-center justify-center rounded-xl bg-primary/12 text-primary"><feature.icon className="size-5" /></div><h3 className="mt-8 text-lg font-semibold">{feature.title}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{feature.text}</p><div className="mt-7 h-px bg-border" /><p className="mt-4 text-xs font-medium text-primary">Explore the workspace <ArrowRight className="ml-1 inline size-3.5" /></p></div>)}</div></div></section>
 
-      <section id="start" className="px-5 py-24 lg:px-8"><div className="mx-auto grid max-w-7xl items-center gap-10 rounded-[1.75rem] border border-primary/25 bg-primary/10 p-8 sm:p-12 lg:grid-cols-[1fr_auto]"><div><p className="text-sm font-medium uppercase tracking-[.18em] text-primary">Start with one honest project</p><h2 className="mt-4 max-w-2xl text-balance text-3xl font-semibold tracking-tight sm:text-5xl">Your next opportunity should see more than the final file.</h2><p className="mt-5 max-w-xl text-sm leading-6 text-muted-foreground">Bring the questions, iterations, and decisions with you. That is where the real signal lives.</p></div><Button size="lg" className="w-full sm:w-auto">Open your workspace <ArrowRight data-icon="inline-end" /></Button></div></section>
+      <section id="start" className="px-5 py-24 lg:px-8"><div className="mx-auto grid max-w-7xl items-center gap-10 rounded-[1.75rem] border border-primary/25 bg-primary/10 p-8 sm:p-12 lg:grid-cols-[1fr_auto]"><div><p className="text-sm font-medium uppercase tracking-[.18em] text-primary">Start with one honest project</p><h2 className="mt-4 max-w-2xl text-balance text-3xl font-semibold tracking-tight sm:text-5xl">Your next opportunity should see more than the final file.</h2><p className="mt-5 max-w-xl text-sm leading-6 text-muted-foreground">Bring the questions, iterations, and decisions with you. That is where the real signal lives.</p></div><Button size="lg" className="w-full sm:w-auto" asChild><Link href="/signin">Open your workspace <ArrowRight data-icon="inline-end" /></Link></Button></div></section>
 
       <footer className="border-t border-border px-5 py-8 lg:px-8"><div className="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><Logo /><div className="flex items-center gap-5 text-xs text-muted-foreground"><span className="inline-flex items-center gap-2"><Users className="size-3.5" /> Built for thoughtful work</span><span>© 2026 FolioLabs</span></div></div></footer>
     </main>

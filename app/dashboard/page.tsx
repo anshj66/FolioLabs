@@ -19,6 +19,10 @@ export default function DashboardPage() {
         </div>
       </section>
 
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[{ label: 'Opportunities', detail: '12 curated matches', href: '/dashboard/opportunities', icon: ArrowUpRight }, { label: 'Greenhouse Engine', detail: '82 momentum score', href: '/dashboard/academiclab', icon: FlaskConical }, { label: 'Faculty', detail: '3 reviews pending', href: '/dashboard/faculty', icon: ShieldCheck }, { label: 'Settings', detail: 'Workspace preferences', href: '/dashboard/settings', icon: CheckCircle2 }].map((feature) => <Link key={feature.label} href={feature.href} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/40"><div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><feature.icon className="size-4" /></div><div className="min-w-0"><p className="text-sm font-medium text-foreground">{feature.label}</p><p className="mt-1 truncate text-xs text-muted-foreground">{feature.detail}</p></div><ArrowUpRight className="ml-auto size-4 text-muted-foreground" /></Link>)}
+      </section>
+
       <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {[
           ['Active projects', demoStats.activeProjects, '2 on track'],
