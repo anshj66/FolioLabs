@@ -43,7 +43,7 @@ export default function DashboardLayout({
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Topbar */}
-        <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border px-4 sm:px-6">
+        <header className="flex min-h-16 shrink-0 items-center gap-3 border-b border-border/80 bg-background/80 px-4 backdrop-blur sm:px-6">
           <Button
             variant="ghost"
             size="icon"
@@ -57,8 +57,8 @@ export default function DashboardLayout({
           <div className="relative hidden max-w-md flex-1 sm:block">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search projects, people, opportunities..."
-              className="h-10 border-transparent bg-secondary/50 pl-10"
+              placeholder="Search your workspace..."
+              className="h-10 border-border/60 bg-secondary/35 pl-10 transition-colors focus:bg-secondary/60"
             />
           </div>
 

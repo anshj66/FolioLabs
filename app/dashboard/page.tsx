@@ -19,14 +19,14 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {[
           ['Active projects', demoStats.activeProjects, '2 on track'],
           ['Evidence captured', demoStats.evidenceCount, '+3 this month'],
           ['Authenticity score', `${demoStats.authenticityScore}%`, 'Excellent'],
           ['Portfolio entries', demoStats.portfolioItems, '4 verified'],
         ].map(([label, value, note]) => (
-          <div key={label} className="rounded-2xl border border-border bg-card p-5">
+          <div key={label} className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm shadow-black/10 transition-transform hover:-translate-y-0.5 sm:p-5">
             <p className="text-sm text-muted-foreground">{label}</p>
             <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">{value}</p>
             <p className="mt-1 text-xs text-primary">{note}</p>
