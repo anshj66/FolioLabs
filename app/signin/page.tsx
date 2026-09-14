@@ -1,5 +1,5 @@
 import { CheckCircle2, ShieldCheck, Sparkles } from "lucide-react"
-import { LoginForm } from "@/components/login-form"
+import {LoginForm} from "@/components/login-form"
 import { Logo } from "@/components/logo"
 
 export default function SignInPage() {

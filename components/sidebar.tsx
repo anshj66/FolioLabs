@@ -1,5 +1,5 @@
 "use client"
-
+import { createClient } from "@/lib/supabase/client"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import {
@@ -26,7 +26,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Logo } from "@/components/logo"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { demoUser } from "@/lib/demo-data"
+import type { User } from "@supabase/supabase-js"
 
 const nav: { label: string; href: string; icon: LucideIcon; group: string }[] = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard, group: "Learn & Build" },
@@ -47,9 +47,16 @@ const nav: { label: string; href: string; icon: LucideIcon; group: string }[] = 
   { label: "Settings", href: "/dashboard/settings", icon: Settings, group: "Account" },
 ]
 
-export function Sidebar() {
+export function Sidebar({ user }: { user: User | null }) {
   const pathname = usePathname()
   const router = useRouter()
+  const supabase = createClient()
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.push("/welcome")
+    router.refresh()
+  }
 
   return (
     <aside className="flex h-full w-full flex-col bg-sidebar">
@@ -81,19 +88,35 @@ export function Sidebar() {
 
       <div className="flex items-center gap-3 border-t border-border p-4">
         <Avatar className="size-9">
-          <AvatarFallback className="bg-primary/15 text-sm font-medium text-primary">
-            AM
-          </AvatarFallback>
+        <AvatarFallback className="bg-primary/15 text-sm font-medium text-primary">
+          {(
+            user?.user_metadata?.full_name ||
+            user?.email ||
+            "U"
+          )
+            .split(" ")
+            .map((part: string) => part[0])
+            .join("")
+            .slice(0, 2)
+            .toUpperCase()}
+        </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">
-            {demoUser.name}
-          </p>
-          <p className="truncate text-xs text-muted-foreground">{demoUser.institution} · Student</p>
+{user?.user_metadata?.full_name ||
+  user?.email?.split("@")[0] ||
+  "User"}          </p>
+          <p className="truncate text-xs text-muted-foreground">{user?.email || "Student"}</p>
         </div>
-        <button type="button" onClick={() => router.push("/welcome")} className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" aria-label="Log out" title="Log out">
-          <LogOut className="size-4" />
-        </button>
+<button
+  type="button"
+  onClick={handleLogout}
+  className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+  aria-label="Log out"
+  title="Log out"
+>
+  <LogOut className="size-4" />
+</button>
       </div>
     </aside>
   )

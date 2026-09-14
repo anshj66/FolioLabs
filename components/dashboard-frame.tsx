@@ -6,14 +6,41 @@ import { Sidebar } from "@/components/sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-export function DashboardFrame({ children }: { children: React.ReactNode }) {
+import type { User } from "@supabase/supabase-js"
+export function DashboardFrame({
+  children,
+  user,
+}: {
+  children: React.ReactNode
+  user: User | null
+}) {
   const [open, setOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
 
   return (
     <div className="flex min-h-svh w-full overflow-hidden bg-background">
-      <div className="hidden w-64 shrink-0 border-r border-border md:block"><Sidebar /></div>
-      {open && <div className="fixed inset-0 z-50 md:hidden"><div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setOpen(false)} aria-hidden="true" /><div className="absolute left-0 top-0 h-full w-72 border-r border-border bg-sidebar shadow-xl"><button onClick={() => setOpen(false)} className="absolute right-3 top-4 z-10 text-muted-foreground hover:text-foreground" aria-label="Close menu"><X className="size-5" /></button><Sidebar /></div></div>}
+      <div className="hidden w-64 shrink-0 border-r border-border md:block"><Sidebar user={user} /></div>
+      {open && <div className="fixed inset-0 z-50 md:hidden"><div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setOpen(false)} aria-hidden="true" /><div className="absolute left-0 top-0 h-full w-72 border-r border-border bg-sidebar shadow-xl"><button onClick={() => setOpen(false)} className="absolute right-3 top-4 z-10 text-muted-foreground hover:text-foreground" aria-label="Close menu"><X className="size-5" /></button>{open && (
+  <div className="fixed inset-0 z-50 md:hidden">
+    <div
+      className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+      onClick={() => setOpen(false)}
+      aria-hidden="true"
+    />
+
+    <div className="absolute left-0 top-0 h-full w-72 border-r border-border bg-sidebar shadow-xl">
+      <button
+        onClick={() => setOpen(false)}
+        className="absolute right-3 top-4 z-10 text-muted-foreground hover:text-foreground"
+        aria-label="Close menu"
+      >
+        <X className="size-5" />
+      </button>
+
+      <Sidebar user={user} />
+    </div>
+  </div>
+)}</div></div>}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex min-h-16 shrink-0 items-center gap-3 border-b border-border/80 bg-background/90 px-4 backdrop-blur sm:px-6">
           <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setOpen(true)} aria-label="Open menu"><Menu className="size-5" /></Button>

@@ -2,17 +2,40 @@ import Link from 'next/link'
 import { ArrowUpRight, CheckCircle2, Clock3, FileText, FlaskConical, ShieldCheck } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { demoEvidence, demoProjects, demoStats, demoUser } from '@/lib/demo-data'
+import { demoEvidence, demoProjects, demoStats } from '@/lib/demo-data'
+import { createClient } from "@/lib/supabase/server"
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const fullName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email?.split("@")[0] ||
+    "there"
+
+  const firstName = fullName.split(" ")[0]
+const currentDate = new Intl.DateTimeFormat("en-US", {
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+}).format(new Date())
+  // ...existing return below
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8">
       <section className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 sm:p-8">
         <div className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
         <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">Tuesday, September 23, 2026</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">Good morning, {demoUser.name.split(' ')[0]}.</h1>
+            <p className="text-sm text-muted-foreground">{currentDate}</p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+              Good morning, {firstName}.
+            </h1>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">Your learning evidence is building momentum. You have one defense to prepare for and three items ready for faculty review.</p>
           </div>
           <Link className={cn(buttonVariants({ variant: 'default' }), 'gap-2')} href="/dashboard/lab">Open Learning Lab <ArrowUpRight className="size-4" /></Link>
