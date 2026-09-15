@@ -27,6 +27,7 @@ export default function AIMentor({
 
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
+  const [sessionId, setSessionId] = useState<string | null>(null)
   const [image, setImage] = useState<{
     data: string
     mimeType: string
@@ -68,76 +69,95 @@ export default function AIMentor({
     reader.readAsDataURL(file)
   }
 
-  async function sendMessage() {
-    const text = input.trim()
-
-    if (!text || loading) return
-
-    const userMessage: Message = {
-      role: "user",
-      content: text,
-    }
-
-    const updatedMessages = [...messages, userMessage]
-
-    setMessages(updatedMessages)
-    setInput("")
-    setLoading(true)
-
-    try {
-      const response = await fetch("/api/ai/mentor", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: text,
-          history: messages,
-          subject,
-          topic,
-          image: image
-            ? {
-                data: image.data,
-                mimeType: image.mimeType,
-              }
-            : undefined,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Something went wrong.")
-      }
-
-      setMessages([
-        ...updatedMessages,
-        {
-          role: "assistant",
-          content: data.response,
-        },
-      ])
-
-      setImage(null)
-} catch (error) {
-  console.error("AI Mentor error:", error)
-
+  function startNewChat() {
   setMessages([
-    ...updatedMessages,
     {
       role: "assistant",
       content:
-        error instanceof Error
-          ? `AI Mentor error: ${error.message}`
-          : "AI Mentor request failed.",
+        "I'm your FolioLabs AI Mentor. I won't give you the answer — I'll help you figure it out. What are you working on?",
     },
   ])
+
+  setSessionId(null)
+  setInput("")
+  setImage(null)
 }
-    finally {
-      setLoading(false)
-    }
+
+async function sendMessage() {
+  const text = input.trim()
+
+  if (!text || loading) return
+
+  const userMessage: Message = {
+    role: "user",
+    content: text,
   }
 
+  const updatedMessages = [...messages, userMessage]
+
+  setMessages(updatedMessages)
+  setInput("")
+  setLoading(true)
+
+  try {
+    const response = await fetch("/api/ai/mentor", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: text,
+        history: messages,
+        subject,
+        topic,
+        sessionId,
+        image: image
+          ? {
+              data: image.data,
+              mimeType: image.mimeType,
+            }
+          : undefined,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || "Something went wrong.")
+    }
+
+    // Save the session ID returned by the server.
+    // The first message creates the session.
+    if (data.sessionId) {
+      setSessionId(data.sessionId)
+    }
+
+    setMessages([
+      ...updatedMessages,
+      {
+        role: "assistant",
+        content: data.response,
+      },
+    ])
+
+    setImage(null)
+  } catch (error) {
+    console.error("AI Mentor error:", error)
+
+    setMessages([
+      ...updatedMessages,
+      {
+        role: "assistant",
+        content:
+          error instanceof Error
+            ? `AI Mentor error: ${error.message}`
+            : "AI Mentor request failed.",
+      },
+    ])
+  } finally {
+    setLoading(false)
+  }
+}
   function handleKeyDown(
     event: React.KeyboardEvent<HTMLTextAreaElement>
   ) {
@@ -165,9 +185,19 @@ export default function AIMentor({
           </div>
         </div>
 
-        <div className="rounded-full border px-3 py-1 text-xs text-muted-foreground">
-          {subject}
-        </div>
+<div className="flex items-center gap-2">
+  <button
+    type="button"
+    onClick={startNewChat}
+    className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
+  >
+    New chat
+  </button>
+
+  <div className="rounded-full border px-3 py-1 text-xs text-muted-foreground">
+    {subject}
+  </div>
+</div>
       </div>
 
       {/* Messages */}

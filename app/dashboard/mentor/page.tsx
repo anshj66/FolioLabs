@@ -1,6 +1,17 @@
 "use client"
+type Message = {
+  id?: string
+  role: "user" | "assistant"
+  content: string
+}
 
-import { useRef, useState } from "react"
+type MentorSession = {
+  id: string
+  title: string
+  created_at: string
+  updated_at: string
+}
+import { useEffect,useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
@@ -14,10 +25,6 @@ import {
 } from "lucide-react"
 
 
-type Message = {
-  role: "user" | "assistant"
-  content: string
-}
 function normalizeMath(text: string) {
   let result = text
 
@@ -50,9 +57,11 @@ function normalizeMath(text: string) {
 }
 export default function MentorPage() {
   const [messages, setMessages] = useState<Message[]>([])
+  const [sessions, setSessions] = useState<MentorSession[]>([])
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
+  const [historyLoading, setHistoryLoading] = useState(true)
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
-
   const [image, setImage] = useState<{
     data: string
     mimeType: string
@@ -60,6 +69,94 @@ export default function MentorPage() {
   } | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  async function startNewChat() {
+    try {
+      const response = await fetch("/api/ai/mentor/sessions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: "New conversation",
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        console.error("Failed to create new chat:", data)
+        return
+      }
+
+      setSessions((previous) => [data.session, ...previous])
+      setCurrentSessionId(data.session.id)
+      setMessages([])
+      setInput("")
+      setImage(null)
+    } catch (error) {
+      console.error("Failed to start new chat:", error)
+    }
+  }
+
+  useEffect(() => {
+    async function loadSessions() {
+      try {
+        const response = await fetch("/api/ai/mentor/sessions")
+        const data = await response.json()
+
+        if (!response.ok) {
+          console.error("Failed to load conversations:", data)
+          return
+        }
+
+        setSessions(data.sessions ?? [])
+
+        if (data.sessions?.length > 0) {
+          setCurrentSessionId(data.sessions[0].id)
+        }
+      } catch (error) {
+        console.error("Failed to load conversations:", error)
+      } finally {
+        setHistoryLoading(false)
+      }
+    }
+
+    loadSessions()
+  }, [])
+
+  useEffect(() => {
+    async function loadMessages() {
+      if (!currentSessionId) {
+        setMessages([])
+        return
+      }
+
+      try {
+        const response = await fetch(
+          `/api/ai/mentor?sessionId=${currentSessionId}`
+        )
+        const data = await response.json()
+
+        if (!response.ok) {
+          console.error("Failed to load messages:", data)
+          return
+        }
+
+        setMessages(
+          (data.messages ?? []).map((message: Message) => ({
+            id: message.id,
+            role: message.role,
+            content: message.content,
+          }))
+        )
+      } catch (error) {
+        console.error("Failed to load messages:", error)
+      }
+    }
+
+    loadMessages()
+  }, [currentSessionId])
 
   const handleImageSelect = (file: File) => {
     if (!file.type.startsWith("image/")) return
@@ -82,6 +179,90 @@ export default function MentorPage() {
 
     reader.readAsDataURL(file)
   }
+
+async function deleteConversation(sessionId: string) {
+  const confirmed = window.confirm(
+    "Delete this conversation? This cannot be undone."
+  )
+
+  if (!confirmed) return
+
+  try {
+    const response = await fetch(
+      `/api/ai/mentor/sessions?sessionId=${encodeURIComponent(sessionId)}`,
+      {
+        method: "DELETE",
+      }
+    )
+
+    const responseText = await response.text()
+
+    let data: { error?: string } = {}
+
+    if (responseText) {
+      try {
+        data = JSON.parse(responseText)
+      } catch {
+        throw new Error(
+          `Delete failed. Server returned: ${responseText}`
+        )
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || `Delete failed (${response.status})`
+      )
+    }
+
+    const remainingSessions = sessions.filter(
+      (session) => session.id !== sessionId
+    )
+
+    setSessions(remainingSessions)
+
+    if (currentSessionId === sessionId) {
+      if (remainingSessions.length > 0) {
+        const nextSession = remainingSessions[0]
+
+        setCurrentSessionId(nextSession.id)
+
+        const messagesResponse = await fetch(
+          `/api/ai/mentor?sessionId=${encodeURIComponent(
+            nextSession.id
+          )}`
+        )
+
+        if (messagesResponse.ok) {
+          const messagesData = await messagesResponse.json()
+
+          setMessages(
+            (messagesData.messages ?? []).map(
+              (message: {
+                role: "user" | "assistant"
+                content: string
+              }) => ({
+                role: message.role,
+                content: message.content,
+              })
+            )
+          )
+        }
+      } else {
+        setCurrentSessionId(null)
+        setMessages([])
+      }
+    }
+  } catch (error) {
+    console.error("Delete conversation error:", error)
+
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Failed to delete conversation."
+    )
+  }
+}
 
   const handleSend = async () => {
     const text = input.trim()
@@ -114,6 +295,7 @@ export default function MentorPage() {
           history: messages,
           subject: "General",
           topic: "General",
+          sessionId: currentSessionId,
           image: image
             ? {
                 data: image.data,
@@ -127,6 +309,25 @@ export default function MentorPage() {
 
       if (!response.ok) {
         throw new Error(data.error || "AI Mentor request failed.")
+      }
+
+      if (data.sessionId && data.sessionId !== currentSessionId) {
+        setCurrentSessionId(data.sessionId)
+        setSessions((previous) => {
+          if (previous.some((session) => session.id === data.sessionId)) {
+            return previous
+          }
+
+          return [
+            {
+              id: data.sessionId,
+              title: "New conversation",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            ...previous,
+          ]
+        })
       }
 
       setMessages([
@@ -160,9 +361,7 @@ export default function MentorPage() {
     setInput(text)
   }
 
-  const handleKeyDown = (
-    event: React.KeyboardEvent<HTMLInputElement>
-  ) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault()
       handleSend()
@@ -172,46 +371,72 @@ export default function MentorPage() {
   return (
     <div className="min-h-full bg-[#080c0a] text-white">
       <div className="mx-auto max-w-5xl space-y-6 px-6 py-6">
-
-        {/* Breadcrumb */}
         <div className="text-sm text-[#8bd3a8]">
-          Learn & Build /{" "}
-          <span className="text-white/70">AI Mentor</span>
+          Learn & Build / <span className="text-white/70">AI Mentor</span>
         </div>
 
-        {/* Header */}
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
             Think with a Socratic mentor
           </h1>
 
           <p className="mt-1 text-sm text-white/50">
-            Guidance grounded in your experiments, decisions, and
-            reflections.
+            Guidance grounded in your experiments, decisions, and reflections.
           </p>
         </div>
 
-        {/* Mentor Card */}
         <div className="rounded-2xl border border-white/10 bg-[#0c1210] p-5 shadow-xl">
-
-          {/* Card Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-
               <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#8bd3a8]/20 bg-[#8bd3a8]/10">
                 <BrainCircuit className="h-4 w-4 text-[#8bd3a8]" />
               </div>
 
               <div>
-                <h2 className="text-sm font-medium">
-                  Mentor session
-                </h2>
+                <h2 className="text-sm font-medium">Mentor session</h2>
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={startNewChat}
+                    disabled={loading || historyLoading}
+                    className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    + New chat
+                  </button>
 
-                <p className="text-xs text-white/40">
-                  Socratic guidance
-                </p>
+                  {sessions.length > 0 && (
+                    <select
+                      value={currentSessionId ?? ""}
+                      onChange={(event) => {
+                        setCurrentSessionId(event.target.value)
+                      }}
+                      disabled={loading || historyLoading}
+                      className="max-w-[220px] rounded-lg border border-white/10 bg-[#111814] px-3 py-1.5 text-xs text-white outline-none"
+                    >
+                      {sessions.map((session, index) => (
+                        <option key={session.id} value={session.id}>
+                          {session.title === "New conversation"
+                            ? `Conversation ${sessions.length - index}`
+                            : session.title}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  {currentSessionId && (
+                    <button
+                      type="button"
+                      onClick={() => deleteConversation(currentSessionId)}
+                      disabled={loading || historyLoading}
+                      className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-1.5 text-xs text-red-400 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+
+                <p className="mt-1 text-xs text-white/40">Socratic guidance</p>
               </div>
-
             </div>
 
             <div className="flex items-center gap-2 text-xs text-[#8bd3a8]">
@@ -220,35 +445,26 @@ export default function MentorPage() {
             </div>
           </div>
 
-          {/* Intro */}
           <div className="mt-5 rounded-xl border border-[#8bd3a8]/10 bg-[#8bd3a8]/5 p-4">
             <div className="flex gap-3">
-
               <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[#8bd3a8]" />
 
               <p className="text-sm leading-6 text-white/70">
-                Ask a question about your current experiment and I
-                will guide your reasoning without giving away the
-                answer.
+                Ask a question about your current experiment and I will guide
+                your reasoning without giving away the answer.
               </p>
-
             </div>
           </div>
 
-          {/* Conversation */}
           {messages.length > 0 && (
             <div className="mt-5 max-h-[420px] space-y-4 overflow-y-auto pr-1">
-
               {messages.map((message, index) => (
                 <div
                   key={index}
                   className={`flex ${
-                    message.role === "user"
-                      ? "justify-end"
-                      : "justify-start"
+                    message.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
-
                   <div
                     className={`max-w-[80%] rounded-xl px-4 py-3 text-sm ${
                       message.role === "user"
@@ -256,25 +472,19 @@ export default function MentorPage() {
                         : "border border-white/10 bg-white/[0.03] text-white/75"
                     }`}
                   >
-
                     {message.role === "assistant" ? (
                       <div className="mentor-markdown">
-<ReactMarkdown
-  remarkPlugins={[remarkMath]}
-  rehypePlugins={[rehypeKatex]}
->
-  {normalizeMath(message.content)}
-</ReactMarkdown>
-
+                        <ReactMarkdown
+                          remarkPlugins={[remarkMath]}
+                          rehypePlugins={[rehypeKatex]}
+                        >
+                          {normalizeMath(message.content)}
+                        </ReactMarkdown>
                       </div>
                     ) : (
-                      <p className="whitespace-pre-wrap">
-                        {message.content}
-                      </p>
+                      <p className="whitespace-pre-wrap">{message.content}</p>
                     )}
-
                   </div>
-
                 </div>
               ))}
 
@@ -285,13 +495,10 @@ export default function MentorPage() {
                   </div>
                 </div>
               )}
-
             </div>
           )}
 
-          {/* Quick Actions */}
           <div className="mt-5 flex flex-wrap gap-2">
-
             <button
               type="button"
               onClick={() =>
@@ -327,13 +534,10 @@ export default function MentorPage() {
             >
               Give me an example
             </button>
-
           </div>
 
-          {/* Image Preview */}
           {image && (
             <div className="relative mt-4 inline-block">
-
               <img
                 src={image.preview}
                 alt="Selected image"
@@ -348,13 +552,10 @@ export default function MentorPage() {
               >
                 <X className="h-3.5 w-3.5" />
               </button>
-
             </div>
           )}
 
-          {/* Input */}
           <div className="mt-5 flex items-center gap-2 rounded-xl border border-white/10 bg-[#080c0a] p-2">
-
             <input
               ref={fileInputRef}
               type="file"
@@ -399,18 +600,14 @@ export default function MentorPage() {
               <span>{loading ? "Thinking" : "Ask"}</span>
               <Send className="h-3.5 w-3.5" />
             </button>
-
           </div>
 
-          {/* Footer */}
           <div className="mt-4 text-center text-xs text-white/30">
             Each interaction is recorded as learning evidence.
           </div>
-
         </div>
       </div>
 
-      {/* Math / Markdown styling */}
       <style jsx global>{`
         .mentor-markdown {
           line-height: 1.7;

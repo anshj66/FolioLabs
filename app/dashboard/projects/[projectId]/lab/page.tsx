@@ -1,4 +1,31 @@
 import Link from "next/link"
 import { FlaskConical } from "lucide-react"
 import { Button } from "@/components/ui/button"
-export default async function ProjectLab({ params }: { params: Promise<{ projectId: string }> }) { const { projectId } = await params; return <main className="mx-auto flex max-w-5xl flex-col gap-6 p-6"><p className="text-sm font-medium text-primary">Project Lab / {projectId}</p><h1 className="text-3xl font-semibold">Experiment workspace</h1><div className="rounded-2xl border border-border bg-card p-6"><FlaskConical className="size-6 text-primary" /><h2 className="mt-4 text-xl font-semibold">Eigenvector Exploration</h2><p className="mt-2 text-muted-foreground">Use the full Learning Lab to change parameters, record decisions, and generate evidence.</p><Button className="mt-5" asChild><Link href="/dashboard/lab">Open Learning Lab</Link></Button></div></main> }
+
+export default async function ProjectLab({
+  params,
+}: {
+  params: Promise<{ projectId: string }>
+}) {
+  const { projectId } = await params
+
+  return (
+    <main className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
+      <p className="text-sm font-medium text-primary">Project Lab / {projectId}</p>
+      <h1 className="text-3xl font-semibold">Experiment workspace</h1>
+
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <FlaskConical className="size-6 text-primary" />
+        <h2 className="mt-4 text-xl font-semibold">Eigenvector Exploration</h2>
+        <p className="mt-2 text-muted-foreground">
+          Use the full Learning Lab to change parameters, record decisions, and
+          generate evidence.
+        </p>
+
+        <Link href="/dashboard/lab" className="mt-5 inline-block">
+          <Button>Open Learning Lab</Button>
+        </Link>
+      </div>
+    </main>
+  )
+}
