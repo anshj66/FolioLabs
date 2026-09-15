@@ -41,6 +41,7 @@ const nav: { label: string; href: string; icon: LucideIcon; group: string }[] = 
   { label: "Faculty Review", href: "/dashboard/faculty", icon: Award, group: "Collaborate & Validate" },
   { label: "Evidence", href: "/dashboard/evidence", icon: BookOpen, group: "Collaborate & Validate" },
   { label: "Defense", href: "/dashboard/defense", icon: Shield, group: "Prove & Launch" },
+  { label: "Community", href: "/dashboard/community", icon: Users, group: "Collaborate & Validate" },
   { label: "Portfolio", href: "/dashboard/portfolio", icon: Award, group: "Prove & Launch" },
   { label: "Research", href: "/dashboard/research", icon: Search, group: "Prove & Launch" },
   { label: "Showcase", href: "/dashboard/showcase", icon: Globe2, group: "Prove & Launch" },
