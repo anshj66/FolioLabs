@@ -47,7 +47,7 @@ export default function PublicProfilePage({
           statsResponse,
           followResponse,
         ] = await Promise.all([
-          fetch(`/api/community/profile/${userId}`),
+          fetch(`/api/profile/${userId}`),
           fetch(`/api/community/stats/${userId}`),
           fetch(`/api/community/follow/status?ids=${userId}`),
         ])

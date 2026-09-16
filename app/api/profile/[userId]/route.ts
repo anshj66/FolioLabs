@@ -7,20 +7,14 @@ export async function GET(
 ) {
   try {
     const supabase = await createClient()
+    const { userId } = await params
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
+    if (!userId) {
       return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
+        { error: "User ID is required" },
+        { status: 400 }
       )
     }
-
-    const { userId } = await params
 
     const { data: profile, error } = await supabase
       .from("profiles")
@@ -29,11 +23,20 @@ export async function GET(
       )
       .eq("id", userId)
       .eq("is_public", true)
-      .single()
+      .maybeSingle()
 
-    if (error || !profile) {
+    if (error) {
+      console.error("Profile API error:", error)
+
       return NextResponse.json(
-        { error: "Profile not found" },
+        { error: "Failed to load profile" },
+        { status: 500 }
+      )
+    }
+
+    if (!profile) {
+      return NextResponse.json(
+        { error: "Profile not found or is private" },
         { status: 404 }
       )
     }
@@ -42,10 +45,10 @@ export async function GET(
       profile,
     })
   } catch (error) {
-    console.error("Public profile error:", error)
+    console.error("Profile route error:", error)
 
     return NextResponse.json(
-      { error: "Failed to load profile" },
+      { error: "Internal server error" },
       { status: 500 }
     )
   }

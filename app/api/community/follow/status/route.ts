@@ -7,28 +7,28 @@ export async function GET(request: NextRequest) {
 
     const {
       data: { user },
-      error: authError,
     } = await supabase.auth.getUser()
 
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       )
     }
 
-    const ids =
-      request.nextUrl.searchParams
-        .get("ids")
-        ?.split(",")
-        .map((id) => id.trim())
-        .filter(Boolean) ?? []
+    const idsParam =
+      request.nextUrl.searchParams.get("ids")
 
-    if (ids.length === 0) {
+    if (!idsParam) {
       return NextResponse.json({
         following: {},
       })
     }
+
+    const ids = idsParam
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean)
 
     const { data, error } = await supabase
       .from("follows")
@@ -37,7 +37,10 @@ export async function GET(request: NextRequest) {
       .in("following_id", ids)
 
     if (error) {
-      console.error("Follow status error:", error)
+      console.error(
+        "Follow status error:",
+        error
+      )
 
       return NextResponse.json(
         { error: "Failed to load follow status" },
@@ -47,22 +50,25 @@ export async function GET(request: NextRequest) {
 
     const following: Record<string, boolean> = {}
 
-    ids.forEach((id) => {
+    for (const id of ids) {
       following[id] = false
-    })
+    }
 
-    data?.forEach((row) => {
+    for (const row of data ?? []) {
       following[row.following_id] = true
-    })
+    }
 
     return NextResponse.json({
       following,
     })
   } catch (error) {
-    console.error("Follow status GET error:", error)
+    console.error(
+      "Follow status route error:",
+      error
+    )
 
     return NextResponse.json(
-      { error: "Failed to load follow status" },
+      { error: "Internal server error" },
       { status: 500 }
     )
   }
