@@ -1,5 +1,7 @@
 import { Bell, CheckCircle2, Lock, UserRound } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { PortfolioPdfButton } from "@/components/portfolio-pdf-button"
+
 import {
   Card,
   CardContent,
@@ -46,6 +48,37 @@ export default function SettingsPage() {
           <ProfileSettings />
         </CardContent>
       </Card>
+{/* PORTFOLIO */}
+<Card>
+  <CardHeader>
+    <div>
+      <CardTitle>Verified portfolio</CardTitle>
+
+      <CardDescription>
+        Generate a portable PDF record of your FolioLabs work,
+        evidence, and authenticity signals.
+      </CardDescription>
+    </div>
+  </CardHeader>
+
+  <CardContent>
+    <div className="flex flex-col gap-5 rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="font-medium">
+          Export your FolioLabs portfolio
+        </p>
+
+        <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
+          Your PDF includes your identity, role, documented
+          folios, evidence, authenticity scores, and a secure
+          verification link.
+        </p>
+      </div>
+
+      <PortfolioPdfButton />
+    </div>
+  </CardContent>
+</Card>
 
       {/* NOTIFICATIONS */}
       <Card>

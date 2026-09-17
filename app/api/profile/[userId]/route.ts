@@ -3,10 +3,19 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ userId: string }> }
+  {
+    params,
+  }: {
+    params: Promise<{ userId: string }>
+  }
 ) {
   try {
     const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
     const { userId } = await params
 
     if (!userId) {
@@ -16,17 +25,29 @@ export async function GET(
       )
     }
 
-    const { data: profile, error } = await supabase
+    /*
+     * Users can always view their own profile.
+     * Other users can only view public profiles.
+     */
+    let query = supabase
       .from("profiles")
       .select(
         "id, full_name, introduction, role, interests, is_public"
       )
       .eq("id", userId)
-      .eq("is_public", true)
-      .maybeSingle()
+
+    if (!user || user.id !== userId) {
+      query = query.eq("is_public", true)
+    }
+
+    const { data: profile, error } =
+      await query.maybeSingle()
 
     if (error) {
-      console.error("Profile API error:", error)
+      console.error(
+        "Profile API error:",
+        error
+      )
 
       return NextResponse.json(
         { error: "Failed to load profile" },
@@ -36,16 +57,23 @@ export async function GET(
 
     if (!profile) {
       return NextResponse.json(
-        { error: "Profile not found or is private" },
+        {
+          error:
+            "Profile not found or is private",
+        },
         { status: 404 }
       )
     }
 
     return NextResponse.json({
       profile,
+      isOwnProfile: user?.id === userId,
     })
   } catch (error) {
-    console.error("Profile route error:", error)
+    console.error(
+      "Profile route error:",
+      error
+    )
 
     return NextResponse.json(
       { error: "Internal server error" },

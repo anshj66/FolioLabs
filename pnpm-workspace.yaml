@@ -3,6 +3,7 @@ overrides:
 
 allowBuilds:
   '@google/genai': set this to true or false
+  core-js: set this to true or false
   msw: false
   protobufjs: set this to true or false
   sharp: false

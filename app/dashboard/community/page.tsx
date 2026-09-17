@@ -67,25 +67,36 @@ export default function CommunityPage() {
     <div className="mx-auto max-w-6xl space-y-8 p-6">
       {/* Header */}
       <div>
-        <div className="flex items-center gap-3">
-          <Users className="size-6 text-primary" />
+        <div className="flex items-start justify-between gap-4">
+  <div>
+    <div className="flex items-center gap-3">
+      <Users className="size-6 text-primary" />
 
-          <div>
-            <p className="text-sm font-medium uppercase tracking-[.18em] text-primary">
-              Connect
-            </p>
-
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-              Community
-            </h1>
-          </div>
-        </div>
-
-        <p className="mt-3 max-w-2xl text-muted-foreground">
-          Discover students, researchers, faculty, and other
-          people building interesting things on FolioLabs.
+      <div>
+        <p className="text-sm font-medium uppercase tracking-[.18em] text-primary">
+          Connect
         </p>
+
+        <h1 className="mt-1 text-3xl font-semibold tracking-tight">
+          Community
+        </h1>
       </div>
+    </div>
+
+    <p className="mt-3 max-w-2xl text-muted-foreground">
+      Discover students, researchers, faculty, and
+      other people building interesting things on
+      FolioLabs.
+    </p>
+  </div>
+
+  <Link href="/dashboard/community/me">
+    <Button variant="outline">
+      My Profile
+    </Button>
+  </Link>
+</div>
+</div>
 
       {/* Search */}
       <form
