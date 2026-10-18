@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { usePathname } from "next/navigation"
 import { Bell, CheckCircle2, Menu, Search, X } from "lucide-react"
 import { Sidebar } from "@/components/sidebar"
 import { Button } from "@/components/ui/button"
@@ -14,6 +15,7 @@ export function DashboardFrame({
   children: React.ReactNode
   user: User | null
 }) {
+  const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
 
