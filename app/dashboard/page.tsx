@@ -1,9 +1,11 @@
 import Link from 'next/link'
-import { ArrowUpRight, CheckCircle2, Clock3, FileText, FlaskConical, ShieldCheck } from 'lucide-react'
+import { ArrowUpRight, CheckCircle2, Clock3, FileText, FlaskConical, ShieldCheck, Users } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { demoEvidence, demoProjects, demoStats } from '@/lib/demo-data'
 import { createClient } from "@/lib/supabase/server"
+import { isAdminEmail } from "@/lib/admin"
+import { createServiceClient } from "@/lib/supabase/service"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -19,6 +21,46 @@ export default async function DashboardPage() {
     "there"
 
   const firstName = fullName.split(" ")[0]
+
+  // Admin sees platform operations only; ordinary members keep the existing dashboard.
+  if (isAdminEmail(user?.email)) {
+    let studentCount = 0
+    let projectCount = 0
+    let opportunityCount = 0
+    let credentialRequestCount = 0
+    try {
+      const admin = createServiceClient()
+      let page = 1
+      while (true) {
+        const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 })
+        if (error) throw error
+        const users = data.users ?? []
+        studentCount += users.filter((u) => (u.email ?? "").toLowerCase() !== "anshj6627@gmail.com").length
+        if (users.length < 1000) break
+        page += 1
+      }
+      const [projects, opportunities, credentials] = await Promise.all([
+        admin.from("projects").select("id", { count: "exact", head: true }),
+        admin.from("opportunities").select("id", { count: "exact", head: true }),
+        admin.from("credential_submissions").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      ])
+      projectCount = projects.count ?? 0
+      opportunityCount = opportunities.count ?? 0
+      credentialRequestCount = credentials.count ?? 0
+    } catch (error) {
+      console.error("Admin overview stats error:", error)
+    }
+    const stats = [
+      { label: "Students on platform", value: studentCount, detail: "Registered member accounts", href: "/dashboard/community", icon: Users },
+      { label: "Student projects", value: projectCount, detail: "Projects recorded in FolioLabs", href: "/dashboard/projects", icon: FlaskConical },
+      { label: "Opportunities", value: opportunityCount, detail: "Draft and published listings", href: "/dashboard/opportunities", icon: ArrowUpRight },
+      { label: "Credential requests", value: credentialRequestCount, detail: "Awaiting admin review", href: "/dashboard/admin/credentials", icon: ShieldCheck },
+    ]
+    return <div className="mx-auto flex max-w-6xl flex-col gap-8">
+      <section className="rounded-2xl border border-border bg-card p-6 sm:p-8"><p className="text-sm font-medium uppercase tracking-[.18em] text-primary">FolioLabs administration</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Platform overview</h1><p className="mt-2 text-sm text-muted-foreground">A focused overview of platform growth and member credential reviews.</p></section>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map((item) => <Link key={item.label} href={item.href} className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><div className="flex items-center justify-between"><p className="text-sm text-muted-foreground">{item.label}</p><item.icon className="size-5 text-primary" /></div><p className="mt-4 text-3xl font-semibold tracking-tight">{item.value}</p><p className="mt-1 text-xs text-muted-foreground">{item.detail}</p></Link>)}</section>
+    </div>
+  }
 const currentDate = new Intl.DateTimeFormat("en-US", {
   weekday: "long",
   month: "long",

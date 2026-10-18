@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Search, Users } from "lucide-react"
+import { BadgeCheck, Search, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -11,6 +11,8 @@ type Profile = {
   full_name: string | null
   role: string
   interests: string[]
+  is_verified?: boolean
+  is_public?: boolean
 }
 
 export default function CommunityPage() {
@@ -148,8 +150,7 @@ export default function CommunityPage() {
             </h2>
 
             <p className="mt-2 text-sm text-muted-foreground">
-              Try another search or be the first person to make
-              your profile public.
+              No profiles match this search.
             </p>
           </CardContent>
         </Card>
@@ -175,9 +176,19 @@ export default function CommunityPage() {
                     </div>
 
                     <div className="min-w-0">
-                      <h2 className="truncate font-semibold">
-                        {profile.full_name || "Unnamed User"}
-                      </h2>
+                      <div className="flex items-center gap-1.5">
+                        <h2 className="truncate font-semibold">
+                          {profile.full_name || "Unnamed User"}
+                        </h2>
+                        {profile.is_public === false && (
+                          <span className="inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-medium text-muted-foreground">Private</span>
+                        )}
+                        {profile.is_verified && (
+                          <span title="Credential verified by FolioLabs" aria-label="Credential verified by FolioLabs" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                            <BadgeCheck className="size-3.5" /> Verified
+                          </span>
+                        )}
+                      </div>
 
                       <p className="mt-1 text-sm text-muted-foreground">
                         {profile.role}

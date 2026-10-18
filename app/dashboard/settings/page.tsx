@@ -10,8 +10,16 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { ProfileSettings } from "@/components/profile-settings"
+import { CredentialVerification } from "@/components/credential-verification"
+import { FileCheck2 } from "lucide-react"
+import { createClient as createServerClient } from "@/lib/supabase/server"
+import { isAdminEmail } from "@/lib/admin"
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const showCredentialVerification = !isAdminEmail(user?.email)
+
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-8">
       <div>
@@ -79,6 +87,25 @@ export default function SettingsPage() {
     </div>
   </CardContent>
 </Card>
+
+{showCredentialVerification && (
+      <Card id="credential-verification">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <FileCheck2 className="size-5 text-primary" />
+            <div>
+              <CardTitle>Credential verification</CardTitle>
+              <CardDescription>
+                Verify your student, PhD, researcher, or faculty status by submitting supporting documentation for admin review.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <CredentialVerification />
+        </CardContent>
+      </Card>
+      )}
 
       {/* NOTIFICATIONS */}
       <Card>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import {
   ArrowLeft,
+  BadgeCheck,
   Lock,
   MessageCircle,
   Users,
@@ -25,6 +26,7 @@ type Profile = {
   role: string
   interests: string[]
   is_public: boolean
+  is_verified?: boolean
 }
 
 type Stats = {
@@ -447,10 +449,16 @@ export default function PublicProfilePage({
                 </div>
 
                 <div>
-                  <h1 className="text-2xl font-semibold">
-                    {profile.full_name ||
-                      "Unnamed User"}
-                  </h1>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-2xl font-semibold">
+                      {profile.full_name || "Unnamed User"}
+                    </h1>
+                    {profile.is_verified && (
+                      <span title="Credential verified by FolioLabs" className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                        <BadgeCheck className="size-4" /> Verified
+                      </span>
+                    )}
+                  </div>
 
                   <p className="mt-1 text-muted-foreground">
                     {profile.role}
