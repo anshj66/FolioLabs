@@ -1,197 +1,34 @@
-import { Bell, CheckCircle2, Lock, UserRound } from "lucide-react"
+import { Bell, CheckCircle2, Lock, UserRound, FileCheck2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PortfolioPdfButton } from "@/components/portfolio-pdf-button"
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ProfileSettings } from "@/components/profile-settings"
 import { CredentialVerification } from "@/components/credential-verification"
-import { FileCheck2 } from "lucide-react"
-import { createClient as createServerClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 import { isAdminEmail } from "@/lib/admin"
 
 export default async function SettingsPage() {
-  const supabase = await createServerClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const showCredentialVerification = !isAdminEmail(user?.email)
+  const isAdmin = isAdminEmail(user?.email)
 
-  return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-8">
-      <div>
-        <p className="text-sm font-medium uppercase tracking-[.18em] text-primary">
-          Workspace settings
-        </p>
-
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-          Make FolioLabs yours.
-        </h1>
-
-        <p className="mt-2 text-muted-foreground">
-          Manage your identity, privacy, and notification preferences.
-        </p>
-      </div>
-
-      {/* PROFILE */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <UserRound className="size-5 text-primary" />
-
-            <div>
-              <CardTitle>Profile</CardTitle>
-
-              <CardDescription>
-                How your identity appears across the FolioLabs community.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          <ProfileSettings />
-        </CardContent>
-      </Card>
-{/* PORTFOLIO */}
-<Card>
-  <CardHeader>
+  return <div className="mx-auto flex max-w-4xl flex-col gap-8">
     <div>
-      <CardTitle>Verified portfolio</CardTitle>
-
-      <CardDescription>
-        Generate a portable PDF record of your FolioLabs work,
-        evidence, and authenticity signals.
-      </CardDescription>
+      <p className="text-sm font-medium uppercase tracking-[.18em] text-primary">{isAdmin ? "Administration" : "Workspace settings"}</p>
+      <h1 className="mt-2 text-3xl font-semibold tracking-tight">{isAdmin ? "Profile Page" : "Make FolioLabs yours."}</h1>
+      <p className="mt-2 text-muted-foreground">{isAdmin ? "Manage the administrator profile." : "Manage your identity, privacy, and notification preferences."}</p>
     </div>
-  </CardHeader>
 
-  <CardContent>
-    <div className="flex flex-col gap-5 rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <p className="font-medium">
-          Export your FolioLabs portfolio
-        </p>
+    <Card>
+      <CardHeader><div className="flex items-center gap-3"><UserRound className="size-5 text-primary" /><div><CardTitle>Profile</CardTitle><CardDescription>{isAdmin ? "Administrator account details." : "How your identity appears across the FolioLabs community."}</CardDescription></div></div></CardHeader>
+      <CardContent><ProfileSettings isAdmin={isAdmin} /></CardContent>
+    </Card>
 
-        <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
-          Your PDF includes your identity, role, documented
-          folios, evidence, authenticity scores, and a secure
-          verification link.
-        </p>
-      </div>
-
-      <PortfolioPdfButton />
-    </div>
-  </CardContent>
-</Card>
-
-{showCredentialVerification && (
-      <Card id="credential-verification">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <FileCheck2 className="size-5 text-primary" />
-            <div>
-              <CardTitle>Credential verification</CardTitle>
-              <CardDescription>
-                Verify your student, PhD, researcher, or faculty status by submitting supporting documentation for admin review.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <CredentialVerification />
-        </CardContent>
-      </Card>
-      )}
-
-      {/* NOTIFICATIONS */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <Bell className="size-5 text-primary" />
-
-            <div>
-              <CardTitle>Notifications</CardTitle>
-
-              <CardDescription>
-                Stay in the loop without losing focus.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="flex flex-col gap-4">
-          {[
-            "New opportunity matches",
-            "Faculty verification updates",
-            "Weekly portfolio signal",
-          ].map((item) => (
-            <div
-              key={item}
-              className="flex items-center justify-between rounded-xl border border-border p-4"
-            >
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="size-4 text-primary" />
-
-                <span className="text-sm">
-                  {item}
-                </span>
-              </div>
-
-              <span className="text-xs text-primary">
-                Enabled
-              </span>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      {/* PRIVACY */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <Lock className="size-5 text-primary" />
-
-            <div>
-              <CardTitle>Privacy</CardTitle>
-
-              <CardDescription>
-                Control how your verified work is shared.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between rounded-xl border border-border p-4">
-              <div>
-                <p className="text-sm font-medium">
-                  Portfolio visibility
-                </p>
-
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Your verified portfolio can be shared by link.
-                </p>
-              </div>
-
-              <span className="rounded-full bg-primary/12 px-3 py-1 text-xs font-medium text-primary">
-                Public link
-              </span>
-            </div>
-
-            <Button
-              variant="outline"
-              className="w-fit"
-            >
-              Manage sharing
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
+    {!isAdmin && <>
+      <Card><CardHeader><div><CardTitle>Verified portfolio</CardTitle><CardDescription>Generate a portable PDF record of your FolioLabs work, evidence, and authenticity signals.</CardDescription></div></CardHeader><CardContent><div className="flex flex-col gap-5 rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">Export your FolioLabs portfolio</p><p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">Your PDF includes your identity, verified role, documented folios, evidence, authenticity scores, and a secure verification link.</p></div><PortfolioPdfButton /></div></CardContent></Card>
+      <Card id="credential-verification"><CardHeader><div className="flex items-center gap-3"><FileCheck2 className="size-5 text-primary" /><div><CardTitle>Credential verification</CardTitle><CardDescription>Submit supporting documentation to verify your academic or professional role.</CardDescription></div></div></CardHeader><CardContent><CredentialVerification /></CardContent></Card>
+      <Card><CardHeader><div className="flex items-center gap-3"><Bell className="size-5 text-primary" /><div><CardTitle>Notifications</CardTitle><CardDescription>Stay in the loop without losing focus.</CardDescription></div></div></CardHeader><CardContent className="flex flex-col gap-4">{["New opportunity matches", "Credential verification updates", "Weekly portfolio signal"].map(item => <div key={item} className="flex items-center justify-between rounded-xl border border-border p-4"><div className="flex items-center gap-3"><CheckCircle2 className="size-4 text-primary" /><span className="text-sm">{item}</span></div><span className="text-xs text-primary">Enabled</span></div>)}</CardContent></Card>
+      <Card><CardHeader><div className="flex items-center gap-3"><Lock className="size-5 text-primary" /><div><CardTitle>Privacy</CardTitle><CardDescription>Control how your verified work is shared.</CardDescription></div></div></CardHeader><CardContent><div className="flex flex-col gap-4"><div className="flex items-center justify-between rounded-xl border border-border p-4"><div><p className="text-sm font-medium">Portfolio visibility</p><p className="mt-1 text-xs text-muted-foreground">Your verified portfolio can be shared by link.</p></div><span className="rounded-full bg-primary/12 px-3 py-1 text-xs font-medium text-primary">Public link</span></div><Button variant="outline" className="w-fit">Manage sharing</Button></div></CardContent></Card>
+    </>}
+  </div>
 }

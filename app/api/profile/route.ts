@@ -95,10 +95,13 @@ export async function PATCH(request: NextRequest) {
         ? body.introduction.trim()
         : ""
 
-    const role =
-      typeof body.role === "string"
-        ? body.role
-        : "Student"
+    // Role is controlled by credential verification, never by profile settings.
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle()
+    const role = existingProfile?.role ?? "Student"
 
     const interests = Array.isArray(body.interests)
       ? body.interests
@@ -120,13 +123,6 @@ export async function PATCH(request: NextRequest) {
     if (introduction.length > 500) {
       return NextResponse.json(
         { error: "Introduction must be 500 characters or less." },
-        { status: 400 }
-      )
-    }
-
-    if (!ALLOWED_ROLES.includes(role)) {
-      return NextResponse.json(
-        { error: "Invalid role." },
         { status: 400 }
       )
     }
