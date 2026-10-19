@@ -1,9 +1,11 @@
+
 overrides:
   hono: 4.12.25
 
 allowBuilds:
-  '@google/genai': set this to true or false
+  '@google/genai': true
   core-js: false
   msw: false
-  protobufjs: set this to true or false
-  sharp: false  unrs-resolver: set this to true or false
+  protobufjs: true
+  sharp: true
+  'unrs-resolver': true
