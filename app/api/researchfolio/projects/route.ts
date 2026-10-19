@@ -1,0 +1,105 @@
+import { NextRequest, NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase/server"
+
+export const runtime = "nodejs"
+
+const DEFAULT_SECTIONS = [
+  { key: "introduction", title: "Introduction", description: "Set the context, explain the problem, and establish why it matters.", content: "", status: "ready" },
+  { key: "research_question", title: "Research question & objectives", description: "Define what you want to find out and what success would mean.", content: "", status: "ready" },
+  { key: "literature_review", title: "Literature review", description: "Map what is known, compare credible sources, and identify what remains uncertain.", content: "", status: "ready" },
+  { key: "hypothesis", title: "Hypothesis / proposition", description: "State a testable expectation or a guiding proposition, where appropriate.", content: "", status: "ready" },
+  { key: "methodology", title: "Methodology", description: "Explain how you will investigate the question and why this method fits.", content: "", status: "ready" },
+  { key: "results", title: "Results & analysis", description: "Record real observations, data, calculations, or analytical findings.", content: "", status: "ready" },
+  { key: "discussion", title: "Discussion", description: "Interpret findings, compare them with prior work, and consider alternatives.", content: "", status: "ready" },
+  { key: "conclusion", title: "Conclusion & future work", description: "Answer the question based on evidence, acknowledge limits, and identify next steps.", content: "", status: "ready" },
+  { key: "references", title: "References", description: "Record the sources you actually consulted and cite them consistently.", content: "", status: "ready" },
+]
+
+function defaultData() {
+  return {
+    version: 1,
+    researchType: "computational",
+    structureMode: "guided",
+    idea: "",
+    introduction: "",
+    hypothesis: "",
+    courseDescription: "",
+    sections: DEFAULT_SECTIONS.map((section) => ({ ...section })),
+    createdFrom: "researchfolio",
+  }
+}
+
+export async function GET(request: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return NextResponse.json({ error: "Please sign in to access your research projects." }, { status: 401 })
+
+  const projectId = request.nextUrl.searchParams.get("id")
+  if (projectId) {
+    const { data: project, error } = await supabase.from("researchfolio_projects").select("*").eq("id", projectId).eq("user_id", user.id).maybeSingle()
+    if (error) {
+      console.error("ResearchFolio project load failed:", error)
+      return NextResponse.json({ error: "Could not load this project. Apply the ResearchFolio database migration and try again." }, { status: 500 })
+    }
+    if (!project) return NextResponse.json({ error: "Project not found." }, { status: 404 })
+    return NextResponse.json({ project })
+  }
+
+  const { data: projects, error } = await supabase.from("researchfolio_projects").select("id,title,project_type,topic,course_title,current_stage,project_data,updated_at,created_at").eq("user_id", user.id).order("updated_at", { ascending: false })
+  if (error) {
+    console.error("ResearchFolio project list failed:", error)
+    return NextResponse.json({ error: "Could not load research projects. Apply the ResearchFolio database migration." }, { status: 500 })
+  }
+  return NextResponse.json({ projects: projects ?? [] })
+}
+
+export async function POST(request: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return NextResponse.json({ error: "Please sign in to save a research project." }, { status: 401 })
+
+  let body: Record<string, unknown>
+  try { body = await request.json() } catch { return NextResponse.json({ error: "Invalid request body." }, { status: 400 }) }
+  const action = typeof body.action === "string" ? body.action : "save"
+
+  if (action === "create") {
+    const projectType = body.project_type === "course" ? "course" : "independent"
+    const title = typeof body.title === "string" ? body.title.trim().slice(0, 180) : "Untitled research project"
+    const projectData = defaultData()
+    const { data: project, error } = await supabase.from("researchfolio_projects").insert({
+      user_id: user.id,
+      title: title || "Untitled research project",
+      project_type: projectType,
+      current_stage: "Project setup",
+      project_data: projectData,
+    }).select("*").single()
+    if (error || !project) {
+      console.error("ResearchFolio project create failed:", error)
+      return NextResponse.json({ error: "Could not create your research project. Check that the ResearchFolio migration is applied." }, { status: 500 })
+    }
+    return NextResponse.json({ project }, { status: 201 })
+  }
+
+  const id = typeof body.id === "string" ? body.id : ""
+  if (!id) return NextResponse.json({ error: "Project id is required to save changes." }, { status: 400 })
+  const allowedType = body.project_type === "course" ? "course" : body.project_type === "independent" ? "independent" : undefined
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
+  if (typeof body.title === "string") updates.title = body.title.trim().slice(0, 180) || "Untitled research project"
+  if (typeof body.topic === "string" || body.topic === null) updates.topic = body.topic
+  if (typeof body.course_title === "string" || body.course_title === null) updates.course_title = body.course_title
+  if (typeof body.current_stage === "string") updates.current_stage = body.current_stage.slice(0, 100)
+  if (allowedType) updates.project_type = allowedType
+  if (body.project_data && typeof body.project_data === "object" && !Array.isArray(body.project_data)) {
+    const json = JSON.stringify(body.project_data)
+    if (json.length > 500_000) return NextResponse.json({ error: "This research draft is too large to save in one request." }, { status: 413 })
+    updates.project_data = body.project_data
+  }
+
+  const { data: project, error } = await supabase.from("researchfolio_projects").update(updates).eq("id", id).eq("user_id", user.id).select("*").maybeSingle()
+  if (error) {
+    console.error("ResearchFolio project save failed:", error)
+    return NextResponse.json({ error: "Could not save your changes. Your current text remains on this page; retry in a moment." }, { status: 500 })
+  }
+  if (!project) return NextResponse.json({ error: "Project not found or you do not have permission to edit it." }, { status: 404 })
+  return NextResponse.json({ project })
+}

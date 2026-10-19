@@ -13,6 +13,8 @@ type StoredMessage = {
 type RequestBody = {
   message: string
   sessionId?: string | null
+  researchMode?: "researchfolio"
+  researchContext?: string
   image?: {
     data: string
     mimeType: string
@@ -109,6 +111,10 @@ export async function POST(request: NextRequest) {
     const message = body.message?.trim()
     const sessionId = body.sessionId
     const image = body.image
+    const researchMode = body.researchMode === "researchfolio"
+    const researchContext = typeof body.researchContext === "string"
+      ? body.researchContext.slice(0, 18000)
+      : ""
 
     if (!message) {
       return NextResponse.json(
@@ -251,10 +257,27 @@ IMAGE POLICY:
 - Do not invent information that is not visible.
 
 Your goal is to make the student think, understand, and eventually solve the problem themselves.
+${researchMode ? `
+RESEARCHFOLIO MODE:
+- You are AcademicLab, a research mentor guiding a student through their own research project.
+- Treat project context as student-provided context, not independently verified evidence.
+- Give specific guidance for the active section and research approach. Ask one useful clarifying question when needed.
+- Never invent publications, DOIs, quotations, experiments, data, results, or claims of having searched the web.
+- Distinguish suggestions, hypotheses, expected outcomes, and actual observed results.
+- Explain which research paper sections are essential, optional, or inappropriate for this project and why.
+- Do not silently rewrite approved manuscript content. Offer draft language as a suggestion and wait for explicit student action to insert it.
+- Help the student reason about research questions, literature-search strategy, methodology, evidence, limitations, and reproducibility.
+- If asked to find sources but no retrieval tool is available, provide search queries and databases to try; be transparent that you have not retrieved or verified sources.
+- Keep responses practical and focused, with concrete next steps rather than generic encouragement.
+` : ""}
 `
 
     const prompt = `
 ${systemPrompt}
+${researchMode ? `
+RESEARCHFOLIO PROJECT CONTEXT (student-provided; not independently verified):
+${researchContext || "No additional project context supplied."}
+` : ""}
 
 CURRENT CONVERSATION:
 
