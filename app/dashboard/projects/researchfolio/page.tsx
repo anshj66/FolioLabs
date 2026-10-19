@@ -332,12 +332,7 @@ export default function ResearchFolioPage() {
     }
     const centralDirectory = join(centralParts)
     const end = join([u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length), u32(centralDirectory.length), u32(offset), u16(0)])
-    const blobParts = [...localParts, centralDirectory, end].map((part) => {
-      const buffer = new ArrayBuffer(part.byteLength)
-      new Uint8Array(buffer).set(part)
-      return buffer
-    })
-    return new Blob(blobParts, { type: "application/zip" })
+    return new Blob([...localParts, centralDirectory, end], { type: "application/zip" })
   }
 
   function exportLatex() {
@@ -362,7 +357,7 @@ export default function ResearchFolioPage() {
     setChatLoading(true)
     const context = `You are AcademicLab, the research mentor inside FolioLabs ResearchFolio. Guide, do not fabricate. Never invent sources, DOIs, experiments, or results. Label suggestions as suggestions and distinguish real evidence from assumptions. Ask clarifying questions if necessary. Encourage the student to approve changes themselves.\nPROJECT CONTEXT:\nProject title: ${projectTitle}\nProject type: ${projectType}\nCourse/topic context: ${contextLabel}\nCourse description: ${courseDescription || "not supplied"}\nResearch idea: ${idea || "not established"}\nResearch type: ${researchType}\nCurrent section: ${active?.title || "Research framing"}\nCurrent section draft: ${active?.content || "empty"}\nOther section summaries: ${sections.filter((s) => s.key !== activeSection && s.content.trim()).map((s) => `${s.title}: ${s.content.slice(0, 500)}`).join("\n") || "No other section drafts yet"}\n\nStudent request: ${message}\n\nRespond with practical, topic-specific guidance. If you suggest text, make it clear that it is a draft for the student to review. Do not claim to have searched the web or verified a source unless a retrieval tool was actually used.`
     try {
-      const response = await fetch("/api/ai/mentor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message, sessionId, researchMode: "researchfolio", researchContext: context }) })
+      const response = await fetch("/api/ai/mentor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message, sessionId, researchMode: "researchfolio", projectId: project?.id, researchContext: context }) })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || "AcademicLab could not respond.")
       if (data.sessionId) setSessionId(data.sessionId)

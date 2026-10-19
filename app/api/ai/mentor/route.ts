@@ -14,6 +14,7 @@ type RequestBody = {
   message: string
   sessionId?: string | null
   researchMode?: "researchfolio"
+  projectId?: string | null
   researchContext?: string
   image?: {
     data: string
@@ -112,6 +113,7 @@ export async function POST(request: NextRequest) {
     const sessionId = body.sessionId
     const image = body.image
     const researchMode = body.researchMode === "researchfolio"
+    const projectId = typeof body.projectId === "string" ? body.projectId : null
     const researchContext = typeof body.researchContext === "string"
       ? body.researchContext.slice(0, 18000)
       : ""
@@ -128,6 +130,19 @@ export async function POST(request: NextRequest) {
         { error: "GEMINI_API_KEY is not configured" },
         { status: 500 }
       )
+    }
+
+    // Validate project ownership before associating AcademicLab history with it.
+    if (researchMode && projectId) {
+      const { data: researchProject, error: researchProjectError } = await supabase
+        .from("researchfolio_projects")
+        .select("id")
+        .eq("id", projectId)
+        .eq("user_id", user.id)
+        .maybeSingle()
+      if (researchProjectError || !researchProject) {
+        return NextResponse.json({ error: "Research project not found or access denied." }, { status: 404 })
+      }
     }
 
     /*
@@ -148,6 +163,7 @@ export async function POST(request: NextRequest) {
           .insert({
             user_id: user.id,
             title,
+            ...(researchMode && projectId ? { researchfolio_project_id: projectId } : {}),
           })
           .select("id, title, created_at, updated_at")
           .single()
@@ -181,6 +197,19 @@ export async function POST(request: NextRequest) {
           { error: "Session not found" },
           { status: 404 }
         )
+      }
+
+      // Attach an existing AcademicLab session to this project once verified.
+      if (researchMode && projectId) {
+        const { error: linkError } = await supabase
+          .from("mentor_sessions")
+          .update({ researchfolio_project_id: projectId })
+          .eq("id", activeSessionId)
+          .eq("user_id", user.id)
+        if (linkError) {
+          console.error("Failed to link AcademicLab session to ResearchFolio project:", linkError)
+          return NextResponse.json({ error: "Could not associate this chat with the research project. Apply the ResearchFolio chat-link migration." }, { status: 500 })
+        }
       }
     }
 

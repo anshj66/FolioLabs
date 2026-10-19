@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowUpRight, BookOpen, CheckCircle2, Code2, FileText, FlaskConical, LoaderCircle, Plus, Sparkles } from "lucide-react"
+import { ArrowUpRight, BookOpen, CheckCircle2, Code2, FileText, FlaskConical, LoaderCircle, MoreHorizontal, Sparkles, Trash2, X } from "lucide-react"
 
 type ResearchProject = {
   id: string
@@ -24,8 +24,10 @@ const folios = [
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<ResearchProject[]>([])
   const [loading, setLoading] = useState(true)
-  const [creating, setCreating] = useState(false)
   const [error, setError] = useState("")
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState("")
 
   const loadProjects = useCallback(async () => {
     setLoading(true)
@@ -41,14 +43,24 @@ export default function ProjectsPage() {
 
   useEffect(() => { void loadProjects() }, [loadProjects])
 
-  async function createProject() {
-    setCreating(true); setError("")
+  async function deleteProject(projectId: string) {
+    setDeletingId(projectId)
+    setDeleteError("")
     try {
-      const response = await fetch("/api/researchfolio/projects", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create", project_type: "independent", title: "Untitled research project" }) })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error ?? "Could not create project.")
-      window.location.href = `/dashboard/projects/researchfolio?projectId=${data.project.id}`
-    } catch (e) { setError(e instanceof Error ? e.message : "Could not create project."); setCreating(false) }
+      const response = await fetch("/api/researchfolio/projects", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: projectId }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error ?? "Could not delete this project.")
+      setProjects((current) => current.filter((project) => project.id !== projectId))
+      setConfirmDeleteId(null)
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "Could not delete this project.")
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return <div className="mx-auto flex max-w-7xl flex-col gap-9 pb-12">
@@ -67,7 +79,7 @@ export default function ProjectsPage() {
     `}</style>
     <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
       <div><p className="text-xs font-semibold uppercase tracking-[.22em] text-primary">My projects · Folio workspace</p><h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Build something worth understanding.</h1><p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">Choose the environment that fits your work. Each Folio captures not only what you make, but the thinking behind it.</p></div>
-      <button onClick={createProject} disabled={creating} className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60">{creating ? <LoaderCircle className="size-4 animate-spin"/> : <Plus className="size-4"/>} New research project</button>
+
     </div>
 
     <div className="grid gap-5 lg:grid-cols-3">
@@ -86,7 +98,20 @@ export default function ProjectsPage() {
     <section className="rounded-3xl border border-border bg-card/70 p-5 sm:p-7">
       <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end"><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-primary">Your research library</p><h2 className="mt-2 text-xl font-semibold">Pick up where you left off</h2><p className="mt-1 text-sm text-muted-foreground">Your drafts are saved to your account and follow you between sessions.</p></div><span className="text-xs text-muted-foreground">{projects.length} {projects.length === 1 ? "project" : "projects"}</span></div>
       {error && <p role="alert" className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error} Make sure the ResearchFolio database migration has been applied.</p>}
-      {loading ? <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin"/>Loading your research…</div> : projects.length === 0 ? <div className="mt-5 rounded-2xl border border-dashed border-border px-5 py-9 text-center"><div className="mx-auto flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary"><Sparkles className="size-5"/></div><h3 className="mt-3 font-medium">Your next discovery starts here</h3><p className="mt-1 text-sm text-muted-foreground">Create a project and your work will appear here automatically.</p></div> : <div className="mt-5 grid gap-3 md:grid-cols-2">{projects.map((project) => { const data = project.project_data ?? {}; const sections = data.sections ?? []; const filled = sections.filter((s) => s.content?.trim()).length; const progress = sections.length ? Math.round(filled / sections.length * 100) : 0; return <Link key={project.id} href={`/dashboard/projects/researchfolio?projectId=${project.id}`} className="group rounded-2xl border border-border bg-background/70 p-4 transition hover:border-primary/40 hover:bg-primary/[.025]"><div className="flex items-start justify-between gap-3"><div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><BookOpen className="size-5"/></div><span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-medium text-muted-foreground"><CheckCircle2 className="size-3"/>{project.current_stage || "Idea"}</span></div><h3 className="mt-4 font-semibold group-hover:text-primary">{project.title || project.topic || "Untitled research project"}</h3><p className="mt-1 text-xs text-muted-foreground">{project.project_type === "course" ? project.course_title || "University course" : "Independent research"} · Updated {new Date(project.updated_at).toLocaleDateString()}</p><div className="mt-4 h-1.5 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }}/></div><p className="mt-2 text-[11px] text-muted-foreground">{filled} of {sections.length} sections started</p></Link> })}</div>}
+      {loading ? <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground"><LoaderCircle className="size-4 animate-spin"/>Loading your research…</div> : projects.length === 0 ? <div className="mt-5 rounded-2xl border border-dashed border-border px-5 py-9 text-center"><div className="mx-auto flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary"><Sparkles className="size-5"/></div><h3 className="mt-3 font-medium">Your next discovery starts here</h3><p className="mt-1 text-sm text-muted-foreground">Create a project and your work will appear here automatically.</p></div> : <div className="mt-5 grid gap-3 md:grid-cols-2">{projects.map((project) => { const data = project.project_data ?? {}; const sections = data.sections ?? []; const filled = sections.filter((s) => s.content?.trim()).length; const progress = sections.length ? Math.round(filled / sections.length * 100) : 0; return <article key={project.id} className="group rounded-2xl border border-border bg-background/70 p-4 transition hover:border-primary/40 hover:bg-primary/[.025]"><div className="flex items-start justify-between gap-3"><Link href={`/dashboard/projects/researchfolio?projectId=${project.id}`} className="min-w-0 flex-1 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary"><div className="flex items-start justify-between gap-3"><div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><BookOpen className="size-5"/></div><span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-medium text-muted-foreground"><CheckCircle2 className="size-3"/>{project.current_stage || "Idea"}</span></div><h3 className="mt-4 font-semibold group-hover:text-primary">{project.title || project.topic || "Untitled research project"}</h3><p className="mt-1 text-xs text-muted-foreground">{project.project_type === "course" ? project.course_title || "University course" : "Independent research"} · Updated {new Date(project.updated_at).toLocaleDateString()}</p><div className="mt-4 h-1.5 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }}/></div><p className="mt-2 text-[11px] text-muted-foreground">{filled} of {sections.length} sections started</p></Link><button type="button" aria-label={`Delete ${project.title || "research project"}`} title="Delete project" onClick={() => { setDeleteError(""); setConfirmDeleteId(project.id) }} className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"><MoreHorizontal className="size-4"/></button></div></article> })}</div>}
     </section>
+
+    {confirmDeleteId && (() => {
+      const target = projects.find((item) => item.id === confirmDeleteId)
+      if (!target) return null
+      return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !deletingId) setConfirmDeleteId(null) }}>
+        <section role="alertdialog" aria-modal="true" aria-labelledby="delete-project-title" aria-describedby="delete-project-description" className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
+          <div className="flex items-start gap-3"><div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive"><Trash2 className="size-5"/></div><div className="min-w-0"><h2 id="delete-project-title" className="text-lg font-semibold">Delete research project?</h2><p className="mt-1 break-words text-sm font-medium">{target.title || target.topic || "Untitled research project"}</p></div><button type="button" aria-label="Close dialog" disabled={!!deletingId} onClick={() => setConfirmDeleteId(null)} className="ml-auto rounded-lg p-1.5 text-muted-foreground hover:bg-secondary disabled:opacity-50"><X className="size-4"/></button></div>
+          <p id="delete-project-description" className="mt-4 text-sm leading-6 text-muted-foreground">This will permanently delete all project contents, evidence, and chats with AcademicLab. This action cannot be undone.</p>
+          {deleteError && <p role="alert" className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{deleteError}</p>}
+          <div className="mt-6 flex justify-end gap-2"><button type="button" disabled={!!deletingId} onClick={() => setConfirmDeleteId(null)} className="inline-flex h-10 items-center justify-center rounded-xl border border-border px-4 text-sm font-medium hover:bg-secondary disabled:opacity-50">Cancel</button><button type="button" disabled={!!deletingId} onClick={() => void deleteProject(target.id)} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-destructive px-4 text-sm font-semibold text-destructive-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">{deletingId === target.id ? <><LoaderCircle className="size-4 animate-spin"/> Deleting…</> : <><Trash2 className="size-4"/> Delete project</>}</button></div>
+        </section>
+      </div>
+    })()}
   </div>
 }

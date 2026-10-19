@@ -103,3 +103,86 @@ export async function POST(request: NextRequest) {
   if (!project) return NextResponse.json({ error: "Project not found or you do not have permission to edit it." }, { status: 404 })
   return NextResponse.json({ project })
 }
+
+
+/**
+ * Permanently deletes a user's ResearchFolio project and AcademicLab sessions
+ * explicitly associated with it. Research drafts, citations, and evidence logs
+ * are stored inside the project's project_data JSON and disappear with the row.
+ */
+export async function DELETE(request: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: "Please sign in to delete a research project." }, { status: 401 })
+  }
+
+  let body: { id?: unknown }
+  try { body = await request.json() } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 })
+  }
+  const id = typeof body.id === "string" ? body.id.trim() : ""
+  if (!id) return NextResponse.json({ error: "Project id is required." }, { status: 400 })
+
+  // Check ownership before touching project data or chat history.
+  const { data: project, error: projectLookupError } = await supabase
+    .from("researchfolio_projects")
+    .select("id")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle()
+
+  if (projectLookupError) {
+    console.error("ResearchFolio delete lookup failed:", projectLookupError)
+    return NextResponse.json({ error: "Could not verify project ownership. Please try again." }, { status: 500 })
+  }
+  if (!project) return NextResponse.json({ error: "Project not found or you do not have permission to delete it." }, { status: 404 })
+
+  // Only delete AcademicLab sessions linked to this exact project; other chats remain untouched.
+  const { data: sessions, error: sessionsLookupError } = await supabase
+    .from("mentor_sessions")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("researchfolio_project_id", id)
+
+  if (sessionsLookupError) {
+    console.error("ResearchFolio chat lookup failed:", sessionsLookupError)
+    return NextResponse.json({ error: "Could not verify this project's AcademicLab chats. Ensure the ResearchFolio chat-link migration has been applied." }, { status: 500 })
+  }
+
+  const sessionIds = (sessions ?? []).map((session) => session.id as string)
+  if (sessionIds.length > 0) {
+    const { error: messagesDeleteError } = await supabase
+      .from("mentor_messages")
+      .delete()
+      .eq("user_id", user.id)
+      .in("session_id", sessionIds)
+    if (messagesDeleteError) {
+      console.error("ResearchFolio chat messages delete failed:", messagesDeleteError)
+      return NextResponse.json({ error: "Could not delete this project's AcademicLab messages. The project was not deleted." }, { status: 500 })
+    }
+
+    const { error: sessionsDeleteError } = await supabase
+      .from("mentor_sessions")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("researchfolio_project_id", id)
+    if (sessionsDeleteError) {
+      console.error("ResearchFolio chat sessions delete failed:", sessionsDeleteError)
+      return NextResponse.json({ error: "Could not delete this project's AcademicLab chats. The project was not deleted." }, { status: 500 })
+    }
+  }
+
+  const { error: deleteError } = await supabase
+    .from("researchfolio_projects")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id)
+
+  if (deleteError) {
+    console.error("ResearchFolio project delete failed:", deleteError)
+    return NextResponse.json({ error: "AcademicLab chats were removed, but the project itself could not be deleted. Please retry." }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true })
+}
