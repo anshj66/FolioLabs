@@ -5,8 +5,8 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
   MessageCircle, Briefcase, FlaskConical, LayoutDashboard, Award, BookOpen,
-  Settings, Shield, Target, Sprout, Sparkles, BrainCircuit, ClipboardCheck,
-  MessageSquare, Users, LogOut, Search, Globe2, UserRound, FolderKanban,
+  Settings, Shield, Target, Sprout, BrainCircuit, ClipboardCheck,
+  MessageSquare, Users, LogOut, Search, Globe2, FolderKanban, GraduationCap, Coins,
   type LucideIcon,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
@@ -25,11 +25,14 @@ const memberNav: NavItem[] = [
   { label: "Assessments", href: "/dashboard/assessment", icon: ClipboardCheck, group: "Learn & Build" },
   { label: "Greenhouse Engine", href: "/dashboard/academiclab", icon: Sprout, group: "Learn & Build" },
   { label: "Opportunities", href: "/dashboard/opportunities", icon: Target, group: "Prove & Launch" },
+  { label: "Courses", href: "/dashboard/courses", icon: GraduationCap, group: "Learn & Build" },
+  { label: "Merit Credits", href: "/dashboard/merit-credits", icon: Coins, group: "Prove & Launch" },
   { label: "Defense", href: "/dashboard/defense", icon: Shield, group: "Prove & Launch" },
   { label: "Portfolio", href: "/dashboard/portfolio", icon: Award, group: "Prove & Launch" },
   { label: "Research", href: "/dashboard/research", icon: Search, group: "Prove & Launch" },
   { label: "Showcase", href: "/dashboard/showcase", icon: Globe2, group: "Prove & Launch" },
   { label: "Feedback", href: "/dashboard/feedback", icon: MessageSquare, group: "Collaborate & Validate" },
+  { label: "Community Review", href: "/dashboard/community-review", icon: BookOpen, group: "Collaborate & Validate" },
   { label: "Peer Review", href: "/dashboard/peer-review", icon: Users, group: "Collaborate & Validate" },
   { label: "Faculty Review", href: "/dashboard/faculty", icon: Award, group: "Collaborate & Validate" },
   { label: "Evidence", href: "/dashboard/evidence", icon: BookOpen, group: "Collaborate & Validate" },
@@ -39,9 +42,9 @@ const memberNav: NavItem[] = [
 ]
 const adminNav: NavItem[] = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard, group: "Administration" },
-  { label: "Profile Page", href: "/dashboard/settings", icon: UserRound, group: "Administration" },
   { label: "Credential Verification Requests", href: "/dashboard/admin/credentials", icon: Shield, group: "Administration" },
   { label: "Students and Projects", href: "/dashboard/admin/students-projects", icon: FolderKanban, group: "Administration" },
+  { label: "Opportunities", href: "/dashboard/opportunities", icon: Target, group: "Administration" },
 ]
 
 export function Sidebar({ user }: { user: User | null }) {
@@ -50,6 +53,14 @@ export function Sidebar({ user }: { user: User | null }) {
   const supabase = createClient()
   const isAdmin = isAdminEmail(user?.email)
   const [unreadMessages, setUnreadMessages] = useState(0)
+  const [profileName, setProfileName] = useState("")
+
+  useEffect(() => {
+    if (!user || isAdmin) return
+    let mounted = true
+    fetch("/api/profile", { cache: "no-store" }).then(response => response.ok ? response.json() : null).then(data => { if (mounted && typeof data?.profile?.full_name === "string") setProfileName(data.profile.full_name.trim()) }).catch(() => {})
+    return () => { mounted = false }
+  }, [isAdmin, user])
 
   useEffect(() => {
     if (isAdmin) return
@@ -96,10 +107,9 @@ export function Sidebar({ user }: { user: User | null }) {
           </div>
         ))}
       </nav>
-      {!isAdmin && <div className="m-3 rounded-xl border border-border bg-card p-4"><div className="flex items-center gap-2 text-sm font-medium text-foreground"><Sparkles className="size-4 text-primary" />Upgrade to Pro</div><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Unlock unlimited verifications and advanced analytics.</p></div>}
       <div className="flex items-center gap-3 border-t border-border p-4">
-        <Avatar className="size-9"><AvatarFallback className="bg-primary/15 text-sm font-medium text-primary">{(user?.user_metadata?.full_name || user?.email || "U").split(" ").map((part: string) => part[0]).join("").slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
-        <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-foreground">{user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User"}</p><p className="truncate text-xs text-muted-foreground">{isAdmin ? "Admin" : user?.email || "Student"}</p></div>
+        <Avatar className="size-9"><AvatarFallback className="bg-primary/15 text-sm font-medium text-primary">{(profileName || user?.user_metadata?.full_name || user?.email || "U").split(" ").map((part: string) => part[0]).join("").slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
+        <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-foreground">{profileName || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User"}</p><p className="truncate text-xs text-muted-foreground">{isAdmin ? "Admin" : user?.email || "Student"}</p></div>
         <button type="button" onClick={handleLogout} className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" aria-label="Log out" title="Log out"><LogOut className="size-4" /></button>
       </div>
     </aside>

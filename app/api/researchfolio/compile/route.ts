@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { isAdminEmail } from "@/lib/admin"
+import { isApprovedAcademic } from "@/lib/platform/permissions"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -12,6 +14,9 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return NextResponse.json({ error: "Please sign in before compiling a research paper." }, { status: 401 })
+  if (isAdminEmail(user.email)) return NextResponse.json({ error: "Administrator accounts do not compile student research papers." }, { status: 403 })
+  const { data: profile } = await supabase.from("profiles").select("academic_role,verification_status").eq("id", user.id).maybeSingle()
+  if (!isApprovedAcademic(profile)) return NextResponse.json({ error: "Your academic role must be approved before compiling a paper." }, { status: 403 })
 
   const compilerUrl = process.env.LATEX_COMPILER_URL
   const compilerToken = process.env.LATEX_COMPILER_TOKEN

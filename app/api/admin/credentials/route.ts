@@ -9,10 +9,11 @@ export async function GET() {
   if (!user || !isAdminEmail(user.email)) return NextResponse.json({ error: "Admin access required." }, { status: 403 })
   try {
     const admin = createServiceClient()
-    const { data: rows, error } = await admin.from("credential_submissions").select("id,user_id,email,full_name,credential_type,institution,file_name,mime_type,status,admin_note,created_at,reviewed_at,storage_path").order("created_at", { ascending: false })
+    const { data: rows, error } = await admin.from("credential_submissions").select("id,user_id,email,full_name,credential_type,requested_role,academic_year,institution,file_name,mime_type,status,admin_note,created_at,reviewed_at,storage_path").order("created_at", { ascending: false })
     if (error) throw error
     const submissions = await Promise.all((rows ?? []).map(async row => {
-      const { data } = await admin.storage.from("credential-documents").createSignedUrl(row.storage_path ?? "", 60 * 5)
+      if (row.status !== "pending" || !row.storage_path) return { ...row, document_url: null }
+      const { data } = await admin.storage.from("credential-documents").createSignedUrl(row.storage_path, 60 * 5)
       return { ...row, document_url: data?.signedUrl ?? null }
     }))
     return NextResponse.json({ submissions })

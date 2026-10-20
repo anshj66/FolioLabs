@@ -6,11 +6,13 @@ import { ProfileSettings } from "@/components/profile-settings"
 import { CredentialVerification } from "@/components/credential-verification"
 import { createClient } from "@/lib/supabase/server"
 import { isAdminEmail } from "@/lib/admin"
+import { redirect } from "next/navigation"
 
 export default async function SettingsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const isAdmin = isAdminEmail(user?.email)
+  if (isAdmin) redirect("/dashboard")
 
   return <div className="mx-auto flex max-w-4xl flex-col gap-8">
     <div>

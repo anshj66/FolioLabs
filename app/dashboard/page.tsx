@@ -14,7 +14,9 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const { data: savedProfile } = user ? await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle() : { data: null }
   const fullName =
+    savedProfile?.full_name?.trim() ||
     user?.user_metadata?.full_name ||
     user?.user_metadata?.name ||
     user?.email?.split("@")[0] ||
@@ -39,12 +41,13 @@ export default async function DashboardPage() {
         if (users.length < 1000) break
         page += 1
       }
-      const [projects, opportunities, credentials] = await Promise.all([
+      const [projects, researchfolioProjects, opportunities, credentials] = await Promise.all([
         admin.from("projects").select("id", { count: "exact", head: true }),
+        admin.from("researchfolio_projects").select("id", { count: "exact", head: true }),
         admin.from("opportunities").select("id", { count: "exact", head: true }),
         admin.from("credential_submissions").select("id", { count: "exact", head: true }).eq("status", "pending"),
       ])
-      projectCount = projects.count ?? 0
+      projectCount = (projects.count ?? 0) + (researchfolioProjects.count ?? 0)
       opportunityCount = opportunities.count ?? 0
       credentialRequestCount = credentials.count ?? 0
     } catch (error) {
@@ -52,7 +55,7 @@ export default async function DashboardPage() {
     }
     const stats = [
       { label: "Students on platform", value: studentCount, detail: "Registered member accounts", href: "/dashboard/community", icon: Users },
-      { label: "Student projects", value: projectCount, detail: "Projects recorded in FolioLabs", href: "/dashboard/projects", icon: FlaskConical },
+      { label: "Student projects", value: projectCount, detail: "Projects recorded in FolioLabs", href: "/dashboard/admin/students-projects", icon: FlaskConical },
       { label: "Opportunities", value: opportunityCount, detail: "Draft and published listings", href: "/dashboard/opportunities", icon: ArrowUpRight },
       { label: "Credential requests", value: credentialRequestCount, detail: "Awaiting admin review", href: "/dashboard/admin/credentials", icon: ShieldCheck },
     ]

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { isAdminEmail } from "@/lib/admin"
+import { isApprovedAcademic } from "@/lib/platform/permissions"
 
 export const runtime = "nodejs"
 
@@ -33,6 +35,9 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return NextResponse.json({ error: "Please sign in to access your research projects." }, { status: 401 })
+  if (isAdminEmail(user.email)) return NextResponse.json({ error: "Administrator accounts do not access student research workspaces." }, { status: 403 })
+  const { data: profile } = await supabase.from("profiles").select("academic_role,verification_status").eq("id", user.id).maybeSingle()
+  if (!isApprovedAcademic(profile)) return NextResponse.json({ error: "Your academic role must be approved before accessing ResearchFolio." }, { status: 403 })
 
   const projectId = request.nextUrl.searchParams.get("id")
   if (projectId) {
@@ -57,6 +62,9 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return NextResponse.json({ error: "Please sign in to save a research project." }, { status: 401 })
+  if (isAdminEmail(user.email)) return NextResponse.json({ error: "Administrator accounts do not access student research workspaces." }, { status: 403 })
+  const { data: profile } = await supabase.from("profiles").select("academic_role,verification_status").eq("id", user.id).maybeSingle()
+  if (!isApprovedAcademic(profile)) return NextResponse.json({ error: "Your academic role must be approved before accessing ResearchFolio." }, { status: 403 })
 
   let body: Record<string, unknown>
   try { body = await request.json() } catch { return NextResponse.json({ error: "Invalid request body." }, { status: 400 }) }
@@ -116,6 +124,9 @@ export async function DELETE(request: NextRequest) {
   if (authError || !user) {
     return NextResponse.json({ error: "Please sign in to delete a research project." }, { status: 401 })
   }
+  if (isAdminEmail(user.email)) return NextResponse.json({ error: "Administrator accounts do not access student research workspaces." }, { status: 403 })
+  const { data: profile } = await supabase.from("profiles").select("academic_role,verification_status").eq("id", user.id).maybeSingle()
+  if (!isApprovedAcademic(profile)) return NextResponse.json({ error: "Your academic role must be approved before accessing ResearchFolio." }, { status: 403 })
 
   let body: { id?: unknown }
   try { body = await request.json() } catch {
