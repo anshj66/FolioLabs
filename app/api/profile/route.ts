@@ -30,7 +30,7 @@ export async function GET() {
     const { data: profile, error } = await supabase
       .from("profiles")
       .select(
-        "id, full_name, introduction, role, interests, is_public"
+        "id, full_name, introduction, role, interests, is_public, academic_role, academic_year, verification_status"
       )
       .eq("id", user.id)
       .maybeSingle()
@@ -55,6 +55,9 @@ export async function GET() {
         role: "Student",
         interests: [],
         is_public: false,
+        academic_role: null,
+        academic_year: null,
+        verification_status: "pending_upload",
       },
     })
   } catch (error) {
@@ -144,7 +147,7 @@ export async function PATCH(request: NextRequest) {
         }
       )
       .select(
-        "id, full_name, introduction, role, interests, is_public"
+        "id, full_name, introduction, role, interests, is_public, academic_role, academic_year, verification_status"
       )
       .single()
 

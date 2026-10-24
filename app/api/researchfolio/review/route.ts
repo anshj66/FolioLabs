@@ -12,7 +12,8 @@ export async function GET() {
   if (error || !user) return NextResponse.json({ error: "Please sign in to view community review." }, { status: 401 })
   if (isAdminEmail(user.email)) return NextResponse.json({ projects: [], admin: true })
   const { data: reviewer } = await supabase.from("profiles").select("academic_role,academic_year,verification_status,full_name").eq("id", user.id).maybeSingle()
-  if (!reviewer || !isApprovedAcademic(reviewer)) return NextResponse.json({ error: "Your academic role must be approved before community review." }, { status: 403 })
+  if (!isApprovedAcademic(reviewer)) return NextResponse.json({ error: "Your academic role must be approved before community review." }, { status: 403 })
+  if (reviewer?.academic_role === "professor") return NextResponse.json({ projects: [], professor: true, message: "Professor accounts use Research Insights, not student community review." })
   const service = createServiceClient()
   const { data: projects, error: projectError } = await service.from("researchfolio_projects").select("id,user_id,title,brief,topic,project_type,project_data,current_stage,community_review_status,submitted_for_review_at,created_at,updated_at").eq("visibility", "community").eq("community_review_status", "published").order("submitted_for_review_at", { ascending: false }).limit(100)
   if (projectError) {
@@ -27,7 +28,7 @@ export async function GET() {
     const data = project.project_data && typeof project.project_data === "object" ? project.project_data as { sections?: unknown } : {}
     const sections = Array.isArray(data.sections) ? data.sections.filter((section: any) => section && typeof section.title === "string" && typeof section.content === "string").map((section: any) => ({ key: String(section.key ?? "section"), title: section.title.slice(0, 180), content: section.content.slice(0, 12000) })) : []
     // Do not expose internal evidence logs, AI chat, or saved LaTeX files in the community feed.
-    return { id: project.id, user_id: project.user_id, title: project.title, brief: project.brief, topic: project.topic, project_type: project.project_type, current_stage: project.current_stage, community_review_status: project.community_review_status, submitted_for_review_at: project.submitted_for_review_at, created_at: project.created_at, author: author ? { full_name: author.full_name, academic_role: author.academic_role, academic_year: author.academic_year } : null, public_sections: sections, can_review: !!author && canReviewAuthor(author, reviewer) }
+    return { id: project.id, title: project.title, brief: project.brief, topic: project.topic, project_type: project.project_type, current_stage: project.current_stage, community_review_status: project.community_review_status, submitted_for_review_at: project.submitted_for_review_at, created_at: project.created_at, public_sections: sections, can_review: !!author && canReviewAuthor(author, reviewer) }
   })
   return NextResponse.json({ projects: visible })
 }
@@ -38,7 +39,8 @@ export async function POST(request: NextRequest) {
   if (error || !user) return NextResponse.json({ error: "Please sign in first." }, { status: 401 })
   if (isAdminEmail(user.email)) return NextResponse.json({ error: "Admin accounts do not participate in student community review." }, { status: 403 })
   const { data: profile } = await supabase.from("profiles").select("academic_role,academic_year,verification_status").eq("id", user.id).maybeSingle()
-  if (!profile || !isApprovedAcademic(profile)) return NextResponse.json({ error: "Your academic role must be approved before using community review." }, { status: 403 })
+  if (!isApprovedAcademic(profile)) return NextResponse.json({ error: "Your academic role must be approved before using community review." }, { status: 403 })
+  if (profile?.academic_role === "professor") return NextResponse.json({ error: "Professor accounts use Research Insights, not student community review." }, { status: 403 })
   let body: Record<string, unknown>
   try { body = await request.json() } catch { return NextResponse.json({ error: "Invalid request body." }, { status: 400 }) }
   const action = body.action

@@ -31,6 +31,11 @@ export async function POST(request: NextRequest) {
     if (!section || typeof section.content !== "string" || !section.content.trim()) return NextResponse.json({ error: "Add and save content to this section before finalizing it." }, { status: 400 })
     const sectionLogs = data.sectionLogs && typeof data.sectionLogs === "object" && !Array.isArray(data.sectionLogs) ? { ...data.sectionLogs } : {}
     const existing = sectionLogs[sectionKey] && typeof sectionLogs[sectionKey] === "object" ? sectionLogs[sectionKey] : { notes: "" }
+    if (existing.finalizedAt) {
+      const { data: feedbackRows, error: feedbackError } = await service.from("researchfolio_feedback").select("id").eq("project_id", projectId).eq("author_id", user.id).eq("section_key", sectionKey).gt("created_at", String(existing.finalizedAt)).limit(1)
+      if (feedbackError) throw feedbackError
+      if (!feedbackRows?.length) return NextResponse.json({ error: "This section is already finalized. Wait for eligible feedback on this section before revising or re-finalizing it." }, { status: 409 })
+    }
     const finalizedAt = new Date().toISOString()
     sectionLogs[sectionKey] = { ...existing, finalizedAt, finalizedContent: section.content }
     const nextData = { ...data, sectionLogs }

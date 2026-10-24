@@ -1,141 +1,90 @@
-import Link from 'next/link'
-import { ArrowUpRight, CheckCircle2, Clock3, FileText, FlaskConical, ShieldCheck, Users } from 'lucide-react'
-import { Button, buttonVariants } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-import { demoEvidence, demoProjects, demoStats } from '@/lib/demo-data'
+import Link from "next/link"
+import { ArrowUpRight, BookOpen, CheckCircle2, Clock3, FileText, FlaskConical, MessageSquareText, Sparkles, GraduationCap, ClipboardCheck, Users } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { isAdminEmail } from "@/lib/admin"
 import { createServiceClient } from "@/lib/supabase/service"
 
+export const dynamic = "force-dynamic"
+type ResearchProject = { id: string; title: string | null; topic: string | null; current_stage: string | null; project_data: any; updated_at: string; created_at: string; community_review_status?: string }
+function getProgress(project: ResearchProject) {
+  const sections = Array.isArray(project.project_data?.sections) ? project.project_data.sections : []
+  if (!sections.length) return 0
+  const drafted = sections.filter((section: any) => typeof section.content === "string" && section.content.trim()).length
+  return Math.round((drafted / sections.length) * 100)
+}
+function getFinalizedCount(project: ResearchProject) {
+  const sections = Array.isArray(project.project_data?.sections) ? project.project_data.sections : []
+  const logs = project.project_data?.sectionLogs || {}
+  return sections.filter((section: any) => Boolean(logs[section.key]?.finalizedAt)).length
+}
 export default async function DashboardPage() {
   const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  const { data: savedProfile } = user ? await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle() : { data: null }
-  const fullName =
-    savedProfile?.full_name?.trim() ||
-    user?.user_metadata?.full_name ||
-    user?.user_metadata?.name ||
-    user?.email?.split("@")[0] ||
-    "there"
-
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const { data: savedProfile } = await supabase.from("profiles").select("full_name,academic_role,academic_year,verification_status").eq("id", user.id).maybeSingle()
+  const fullName = savedProfile?.full_name?.trim() || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "there"
   const firstName = fullName.split(" ")[0]
+  const today = new Intl.DateTimeFormat("en-IN", { weekday: "long", month: "long", day: "numeric" }).format(new Date())
 
-  // Admin sees platform operations only; ordinary members keep the existing dashboard.
-  if (isAdminEmail(user?.email)) {
-    let studentCount = 0
-    let projectCount = 0
-    let opportunityCount = 0
-    let credentialRequestCount = 0
+  if (isAdminEmail(user.email)) {
+    let studentCount = 0, projectCount = 0, opportunityCount = 0, credentialRequestCount = 0
     try {
       const admin = createServiceClient()
-      let page = 1
-      while (true) {
-        const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 })
-        if (error) throw error
-        const users = data.users ?? []
-        studentCount += users.filter((u) => (u.email ?? "").toLowerCase() !== "anshj6627@gmail.com").length
-        if (users.length < 1000) break
-        page += 1
-      }
-      const [projects, researchfolioProjects, opportunities, credentials] = await Promise.all([
+      const { data: users } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 })
+      studentCount = (users?.users ?? []).filter(account => (account.email ?? "").toLowerCase() !== "anshj6627@gmail.com").length
+      const [projects, rf, opportunities, credentials] = await Promise.all([
         admin.from("projects").select("id", { count: "exact", head: true }),
         admin.from("researchfolio_projects").select("id", { count: "exact", head: true }),
         admin.from("opportunities").select("id", { count: "exact", head: true }),
         admin.from("credential_submissions").select("id", { count: "exact", head: true }).eq("status", "pending"),
       ])
-      projectCount = (projects.count ?? 0) + (researchfolioProjects.count ?? 0)
-      opportunityCount = opportunities.count ?? 0
-      credentialRequestCount = credentials.count ?? 0
-    } catch (error) {
-      console.error("Admin overview stats error:", error)
-    }
+      projectCount = (projects.count ?? 0) + (rf.count ?? 0); opportunityCount = opportunities.count ?? 0; credentialRequestCount = credentials.count ?? 0
+    } catch (error) { console.error("Admin overview stats error", error) }
     const stats = [
-      { label: "Students on platform", value: studentCount, detail: "Registered member accounts", href: "/dashboard/community", icon: Users },
-      { label: "Student projects", value: projectCount, detail: "Projects recorded in FolioLabs", href: "/dashboard/admin/students-projects", icon: FlaskConical },
-      { label: "Opportunities", value: opportunityCount, detail: "Draft and published listings", href: "/dashboard/opportunities", icon: ArrowUpRight },
-      { label: "Credential requests", value: credentialRequestCount, detail: "Awaiting admin review", href: "/dashboard/admin/credentials", icon: ShieldCheck },
+      { label: "Users on platform", value: studentCount, detail: "Registered member accounts", href: "/dashboard/admin/students-projects", icon: BookOpen },
+      { label: "Student projects", value: projectCount, detail: "Database-backed projects", href: "/dashboard/admin/students-projects", icon: FlaskConical },
+      { label: "Opportunities", value: opportunityCount, detail: "Published platform listings", href: "/dashboard/opportunities", icon: ArrowUpRight },
+      { label: "Credential requests", value: credentialRequestCount, detail: "Awaiting review", href: "/dashboard/admin/credentials", icon: CheckCircle2 },
     ]
-    return <div className="mx-auto flex max-w-6xl flex-col gap-8">
-      <section className="rounded-2xl border border-border bg-card p-6 sm:p-8"><p className="text-sm font-medium uppercase tracking-[.18em] text-primary">FolioLabs administration</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Platform overview</h1><p className="mt-2 text-sm text-muted-foreground">A focused overview of platform growth and member credential reviews.</p></section>
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map((item) => <Link key={item.label} href={item.href} className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><div className="flex items-center justify-between"><p className="text-sm text-muted-foreground">{item.label}</p><item.icon className="size-5 text-primary" /></div><p className="mt-4 text-3xl font-semibold tracking-tight">{item.value}</p><p className="mt-1 text-xs text-muted-foreground">{item.detail}</p></Link>)}</section>
-    </div>
+    return <div className="mx-auto flex max-w-6xl flex-col gap-7"><section className="relative overflow-hidden rounded-3xl border border-border bg-card p-7 sm:p-9"><div className="pointer-events-none absolute -right-12 -top-20 size-64 rounded-full bg-primary/10 blur-3xl"/><p className="relative text-xs font-semibold uppercase tracking-[.18em] text-primary">FolioLabs · Operations</p><h1 className="relative mt-3 text-3xl font-semibold tracking-tight">Platform overview</h1><p className="relative mt-2 text-sm text-muted-foreground">Live counts from your platform database.</p></section><section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map(item => <Link key={item.label} href={item.href} className="group rounded-2xl border border-border bg-card p-5 transition duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5"><div className="flex items-center justify-between"><p className="text-sm text-muted-foreground">{item.label}</p><item.icon className="size-5 text-primary transition-transform group-hover:scale-110"/></div><p className="mt-5 text-3xl font-semibold tabular-nums">{item.value}</p><p className="mt-1 text-xs text-muted-foreground">{item.detail}</p></Link>)}</section></div>
   }
-const currentDate = new Intl.DateTimeFormat("en-US", {
-  weekday: "long",
-  month: "long",
-  day: "numeric",
-  year: "numeric",
-}).format(new Date())
-  // ...existing return below
-  return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-8">
-      <section className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 sm:p-8">
-        <div className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
-        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">{currentDate}</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-              Good morning, {firstName}.
-            </h1>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">Your learning evidence is building momentum. You have one defense to prepare for and three items ready for faculty review.</p>
-          </div>
-          <Link className={cn(buttonVariants({ variant: 'default' }), 'gap-2')} href="/dashboard/lab">Open Learning Lab <ArrowUpRight className="size-4" /></Link>
-        </div>
-      </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {[{ label: 'Opportunities', detail: '12 curated matches', href: '/dashboard/opportunities', icon: ArrowUpRight }, { label: 'Greenhouse Engine', detail: '82 momentum score', href: '/dashboard/academiclab', icon: FlaskConical }, { label: 'Faculty', detail: '3 reviews pending', href: '/dashboard/faculty', icon: ShieldCheck }, { label: 'Settings', detail: 'Workspace preferences', href: '/dashboard/settings', icon: CheckCircle2 }].map((feature) => <Link key={feature.label} href={feature.href} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/40"><div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><feature.icon className="size-4" /></div><div className="min-w-0"><p className="text-sm font-medium text-foreground">{feature.label}</p><p className="mt-1 truncate text-xs text-muted-foreground">{feature.detail}</p></div><ArrowUpRight className="ml-auto size-4 text-muted-foreground" /></Link>)}
-      </section>
+  if (savedProfile?.academic_role === "professor") {
+    const service = createServiceClient()
+    const [{ data: courses }, { data: projects }, { count: insightsCount }, { count: assessmentCount }] = await Promise.all([
+      service.from("courses").select("id,title,course_code,created_at").eq("professor_id", user.id).order("created_at", { ascending: false }).limit(100),
+      service.from("researchfolio_projects").select("id,title,topic,current_stage,updated_at").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(100),
+      service.from("researchfolio_feedback").select("id", { count: "exact", head: true }).eq("author_id", user.id),
+      service.from("course_assessments").select("id", { count: "exact", head: true }).eq("professor_id", user.id).eq("status", "published"),
+    ])
+    const courseIds = (courses ?? []).map(course => course.id)
+    const { count: enrolledStudentCount } = courseIds.length ? await service.from("course_memberships").select("user_id", { count: "exact", head: true }).in("course_id", courseIds).eq("status", "enrolled") : { count: 0 }
+    const stats = [
+      { label: "Courses taught", value: courses?.length ?? 0, detail: "Your course spaces", href: "/dashboard/courses", icon: GraduationCap },
+      { label: "Student enrollments", value: enrolledStudentCount ?? 0, detail: "Across your courses", href: "/dashboard/courses", icon: Users },
+      { label: "Assessments published", value: assessmentCount ?? 0, detail: "Timed, course-specific assessments", href: "/dashboard/assessment", icon: ClipboardCheck },
+      { label: "Research insights", value: insightsCount ?? 0, detail: "Anonymous feedback on your research", href: "/dashboard/feedback", icon: MessageSquareText },
+    ]
+    return <div className="mx-auto flex max-w-6xl flex-col gap-7"><section className="relative overflow-hidden rounded-3xl border border-border bg-card p-7 sm:p-9"><div className="pointer-events-none absolute -right-12 -top-20 size-64 rounded-full bg-primary/10 blur-3xl"/><p className="relative text-xs font-semibold uppercase tracking-[.18em] text-primary">FolioLabs · Faculty workspace</p><h1 className="relative mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Welcome back, {firstName}.</h1><p className="relative mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Manage courses, organise student batches, create concept-aligned assessments, and explore anonymous insights on your research. Faculty accounts are not assessed for student evidence or Merit Credits.</p><div className="relative mt-5 flex flex-wrap gap-3"><Link href="/dashboard/courses" className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"><GraduationCap className="size-4"/> Manage courses</Link><Link href="/dashboard/assessment" className="inline-flex h-10 items-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold hover:bg-secondary"><Sparkles className="size-4"/> Create AI assessment</Link></div></section><section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{stats.map((item,index) => <Link key={item.label} href={item.href} style={{animationDelay:`${index*70}ms`}} className="animate-in fade-in slide-in-from-bottom-2 rounded-2xl border border-border bg-card p-5 duration-500 transition hover:-translate-y-1 hover:border-primary/30"><div className="flex items-center justify-between"><p className="text-sm text-muted-foreground">{item.label}</p><item.icon className="size-5 text-primary"/></div><p className="mt-5 text-3xl font-semibold tabular-nums">{item.value}</p><p className="mt-1 text-xs text-muted-foreground">{item.detail}</p></Link>)}</section><section className="grid gap-5 lg:grid-cols-[1.1fr_.9fr]"><div className="rounded-2xl border border-border bg-card"><div className="flex items-center justify-between border-b border-border p-5"><div><h2 className="font-semibold">Your courses</h2><p className="mt-1 text-sm text-muted-foreground">Course spaces and student rosters</p></div><Link href="/dashboard/courses" className="text-xs font-semibold text-primary">Manage →</Link></div>{(courses ?? []).length ? <div className="divide-y divide-border">{courses!.slice(0,5).map(course => <div key={course.id} className="flex items-center justify-between gap-3 p-4"><div><p className="font-medium">{course.title}</p><p className="mt-1 font-mono text-xs text-muted-foreground">{course.course_code}</p></div><Link href="/dashboard/courses" className="text-xs font-semibold text-primary">Open course</Link></div>)}</div> : <div className="p-6"><p className="text-sm text-muted-foreground">No courses yet. Create your first course and share its joining code with students.</p><Link href="/dashboard/courses" className="mt-3 inline-flex text-sm font-semibold text-primary">Create a course →</Link></div>}</div><div className="rounded-2xl border border-border bg-card"><div className="border-b border-border p-5"><h2 className="font-semibold">Research workspace</h2><p className="mt-1 text-sm text-muted-foreground">Your research is separate from student evidence assessment.</p></div>{(projects ?? []).length ? <div className="divide-y divide-border">{projects!.slice(0,4).map(project => <Link key={project.id} href={`/dashboard/projects/researchfolio?id=${encodeURIComponent(project.id)}`} className="block p-4 transition hover:bg-secondary/30"><p className="font-medium">{project.title || "Untitled research"}</p><p className="mt-1 text-xs text-muted-foreground">{project.topic || project.current_stage || "Research project"} · Updated {new Date(project.updated_at).toLocaleDateString()}</p></Link>)}</div> : <div className="p-6"><p className="text-sm text-muted-foreground">No research projects saved to your account yet.</p><Link href="/dashboard/projects/researchfolio" className="mt-3 inline-flex text-sm font-semibold text-primary">Start a research workspace →</Link></div>}<Link href="/dashboard/feedback" className="flex items-center justify-between border-t border-border p-4 text-sm font-semibold text-primary"><span>View research insights</span><ArrowUpRight className="size-4"/></Link></div></section></div>
+  }
 
-      <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {[
-          ['Active projects', demoStats.activeProjects, '2 on track'],
-          ['Evidence captured', demoStats.evidenceCount, '+3 this month'],
-          ['Authenticity score', `${demoStats.authenticityScore}%`, 'Excellent'],
-          ['Portfolio entries', demoStats.portfolioItems, '4 verified'],
-        ].map(([label, value, note]) => (
-          <div key={label} className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm shadow-black/10 transition-transform hover:-translate-y-0.5 sm:p-5">
-            <p className="text-sm text-muted-foreground">{label}</p>
-            <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">{value}</p>
-            <p className="mt-1 text-xs text-primary">{note}</p>
-          </div>
-        ))}
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
-        <div className="rounded-2xl border border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border p-6">
-            <div><h2 className="font-semibold text-foreground">Active projects</h2><p className="mt-1 text-sm text-muted-foreground">Your current learning threads</p></div>
-            <Link className={buttonVariants({ variant: 'ghost', size: 'sm' })} href="/dashboard/projects">View all</Link>
-          </div>
-          <div className="flex flex-col">
-            {demoProjects.filter((p) => p.status === 'active').map((project) => (
-              <div key={project.id} className="flex items-center gap-4 border-b border-border p-6 last:border-0">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10"><FlaskConical className="size-5 text-primary" /></div>
-                <div className="min-w-0 flex-1"><p className="truncate font-medium text-foreground">{project.name}</p><p className="mt-1 text-xs text-muted-foreground">{project.category} · {project.collaborators.length + 1} contributors</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-primary" style={{ width: `${project.progress}%` }} /></div></div>
-                <span className="text-sm font-semibold text-foreground">{project.progress}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-border bg-card">
-          <div className="border-b border-border p-6"><h2 className="font-semibold text-foreground">Next up</h2><p className="mt-1 text-sm text-muted-foreground">Keep the evidence loop moving</p></div>
-          <div className="flex flex-col gap-5 p-6">
-            {[{icon: Clock3, title: 'Prepare project defense', detail: 'Friday · 10:00 AM', href: '/dashboard/defense'}, {icon: FileText, title: 'Add a project reflection', detail: 'Eigenvector Centrality', href: '/dashboard/evidence'}, {icon: ShieldCheck, title: 'Faculty review pending', detail: '3 evidence items', href: '/dashboard/faculty'}].map((item) => <Link href={item.href} key={item.title} className="flex gap-3 rounded-xl p-2 -m-2 hover:bg-secondary/60"><item.icon className="mt-0.5 size-5 text-primary" /><div><p className="text-sm font-medium text-foreground">{item.title}</p><p className="mt-1 text-xs text-muted-foreground">{item.detail}</p></div></Link>)}
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border p-6"><div><h2 className="font-semibold text-foreground">Recent evidence</h2><p className="mt-1 text-sm text-muted-foreground">A transparent record of your work</p></div><Link className={buttonVariants({ variant: 'ghost', size: 'sm' })} href="/dashboard/evidence">Open timeline</Link></div>
-        <div className="grid gap-4 p-6 sm:grid-cols-3">{demoEvidence.slice(0, 3).map((evidence) => <div key={evidence.id} className="rounded-xl border border-border bg-secondary/30 p-4"><div className="flex items-center justify-between"><span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-muted-foreground">{evidence.type}</span>{evidence.verified && <CheckCircle2 className="size-4 text-primary" />}</div><p className="mt-4 text-sm font-medium text-foreground">{evidence.title}</p><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{evidence.description}</p></div>)}</div>
-      </section>
-    </div>
-  )
+  const { data: projectsData, error: projectError } = await supabase.from("researchfolio_projects").select("id,title,topic,current_stage,project_data,updated_at,created_at,community_review_status").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(1000)
+  const projects = (projectsData ?? []) as ResearchProject[]
+  const totalDrafted = projects.reduce((sum, project) => sum + (Array.isArray(project.project_data?.sections) ? project.project_data.sections.filter((section: any) => typeof section.content === "string" && section.content.trim()).length : 0), 0)
+  const totalFinalized = projects.reduce((sum, project) => sum + getFinalizedCount(project), 0)
+  const inProgress = projects.filter(project => getProgress(project) < 100)
+  const latest = projects.slice(0, 4)
+  const { count: feedbackCount } = await supabase.from("researchfolio_feedback").select("id", { count: "exact", head: true }).eq("author_id", user.id)
+  const statCards = [
+    { label: "Research projects", value: projects.length, note: "Your saved work", icon: FlaskConical },
+    { label: "Sections drafted", value: totalDrafted, note: "Saved in ResearchFolio", icon: FileText },
+    { label: "Sections finalized", value: totalFinalized, note: "Evidence snapshots", icon: CheckCircle2 },
+    { label: "Feedback received", value: feedbackCount ?? 0, note: "Anonymous reviews", icon: MessageSquareText },
+  ]
+  return <div className="mx-auto flex max-w-6xl flex-col gap-7">
+    <section className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 sm:p-9"><div className="pointer-events-none absolute -right-12 -top-20 size-64 rounded-full bg-primary/10 blur-3xl"/><div className="pointer-events-none absolute bottom-0 right-1/4 size-32 rounded-full bg-cyan-400/5 blur-2xl"/><div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm text-muted-foreground">{today}</p><p className="mt-3 text-xs font-semibold uppercase tracking-[.18em] text-primary">Your research workspace</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Welcome back, {firstName}.</h1><p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">Small, thoughtful steps build strong research. Your dashboard now reflects the projects and feedback actually saved to your account.</p>{savedProfile?.academic_role && <p className="mt-3 inline-flex rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-primary">{savedProfile.academic_role === "undergraduate" ? `Undergraduate${savedProfile.academic_year ? ` · Year ${savedProfile.academic_year}` : ""}` : savedProfile.academic_role === "phd" ? "PhD researcher" : savedProfile.academic_role === "masters" ? "Master’s researcher" : "Professor"}</p>}</div><Link href="/dashboard/projects/researchfolio" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20"><Sparkles className="size-4"/> Continue ResearchFolio <ArrowUpRight className="size-4"/></Link></div></section>
+    <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">{statCards.map((item, index) => <div key={item.label} style={{ animationDelay: `${index * 70}ms` }} className="animate-in fade-in slide-in-from-bottom-2 rounded-2xl border border-border bg-card p-4 duration-500 sm:p-5"><div className="flex items-center justify-between gap-2"><p className="text-xs text-muted-foreground sm:text-sm">{item.label}</p><item.icon className="size-4 shrink-0 text-primary"/></div><p className="mt-4 text-3xl font-semibold tabular-nums">{item.value}</p><p className="mt-1 text-xs text-muted-foreground">{item.note}</p></div>)}</section>
+    <section className="grid gap-5 lg:grid-cols-[1.3fr_.7fr]"><div className="rounded-2xl border border-border bg-card"><div className="flex items-center justify-between border-b border-border p-5 sm:p-6"><div><h2 className="font-semibold">Your research projects</h2><p className="mt-1 text-sm text-muted-foreground">Live from your saved ResearchFolio projects</p></div><Link href="/dashboard/projects" className="text-xs font-semibold text-primary hover:underline">View all →</Link></div>{projectError ? <p className="p-6 text-sm text-destructive">Could not load your projects. Please refresh or check your database migration.</p> : latest.length ? <div className="divide-y divide-border">{latest.map(project => { const progress = getProgress(project); const sections = Array.isArray(project.project_data?.sections) ? project.project_data.sections : []; return <Link key={project.id} href={`/dashboard/projects/researchfolio?id=${encodeURIComponent(project.id)}`} className="group flex gap-3 p-5 transition hover:bg-secondary/30 sm:gap-4 sm:p-6"><div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition group-hover:scale-105"><FlaskConical className="size-5"/></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="truncate text-sm font-semibold">{project.title || "Untitled research project"}</h3><span className="text-xs font-semibold tabular-nums text-primary">{progress}%</span></div><p className="mt-1 truncate text-xs text-muted-foreground">{project.topic || project.current_stage || "Research project"} · {sections.length} sections</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${progress}%` }}/></div><p className="mt-2 text-[11px] text-muted-foreground">Updated {new Date(project.updated_at).toLocaleDateString()}</p></div><ArrowUpRight className="mt-1 size-4 shrink-0 text-muted-foreground transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary"/></Link> })}</div> : <div className="p-8 text-center sm:p-12"><div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary"><FlaskConical className="size-6"/></div><h3 className="mt-4 font-semibold">Your first project starts here</h3><p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">Create a ResearchFolio project to see real progress, finalized sections, and feedback on this dashboard.</p><Link href="/dashboard/projects/researchfolio" className="mt-4 inline-flex rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">Create a project</Link></div>}</div>
+      <div className="flex flex-col gap-4"><article className="rounded-2xl border border-border bg-card p-5 sm:p-6"><div className="flex items-center gap-3"><div className="rounded-xl bg-primary/10 p-2.5 text-primary"><MessageSquareText className="size-5"/></div><div><h2 className="font-semibold">Feedback loop</h2><p className="mt-1 text-xs text-muted-foreground">Anonymous, useful, actionable</p></div></div><p className="mt-4 text-sm leading-6 text-muted-foreground">Review feedback you receive or contribute to another researcher’s work. Your review history is available on the same page.</p><Link href="/dashboard/feedback" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">Open feedback inbox <ArrowUpRight className="size-4"/></Link><Link href="/dashboard/community-review" className="mt-3 flex items-center justify-between rounded-xl border border-border p-3 text-sm transition hover:border-primary/30 hover:bg-secondary/30"><span>Review community projects</span><ArrowUpRight className="size-4 text-muted-foreground"/></Link></article><article className="rounded-2xl border border-border bg-card p-5 sm:p-6"><div className="flex items-center gap-3"><div className="rounded-xl bg-cyan-400/10 p-2.5 text-cyan-300"><Clock3 className="size-5"/></div><div><h2 className="font-semibold">Keep your momentum</h2><p className="mt-1 text-xs text-muted-foreground">Based on your actual project data</p></div></div>{inProgress.length ? <div className="mt-4 space-y-3">{inProgress.slice(0, 3).map(project => <Link key={project.id} href={`/dashboard/projects/researchfolio?id=${encodeURIComponent(project.id)}`} className="flex items-center justify-between gap-3 rounded-xl bg-secondary/40 p-3 transition hover:bg-secondary"><div className="min-w-0"><p className="truncate text-sm font-medium">{project.title || "Untitled project"}</p><p className="mt-1 text-xs text-muted-foreground">{getFinalizedCount(project)} sections finalized</p></div><span className="text-sm font-semibold text-primary">{getProgress(project)}%</span></Link>)}</div> : <p className="mt-4 rounded-xl bg-secondary/40 p-4 text-sm leading-6 text-muted-foreground">No unfinished projects. Create a new project or review a community submission to keep learning.</p>}<Link href="/dashboard/lab" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">Open Learning Lab <ArrowUpRight className="size-4"/></Link></article></div></section>
+  </div>
 }
-

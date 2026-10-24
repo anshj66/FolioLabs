@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 type TopicId = "eigenvalues" | "eigenvector-centrality"
+type PublishedUnit = { id: string; title: string; summary: string; unit_type: string; content_markdown: string; resource_url: string | null; content_config?: { weeks?: string; references?: string; learning_outcome?: string } }
+type PublishedModule = { id: string; title: string; subject: string; description: string; units: PublishedUnit[] }
 
 type Evidence = {
   id: string
@@ -146,8 +148,20 @@ export default function LabPage() {
   const [reasoning, setReasoning] = useState("")
 
   const [evidence, setEvidence] = useState<Evidence[]>([])
+  const [publishedModules, setPublishedModules] = useState<PublishedModule[]>([])
+  const [contentError, setContentError] = useState("")
 
   const [videoPlaying, setVideoPlaying] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    fetch("/api/learning-lab/content", { cache: "no-store" }).then(async response => {
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || "Could not load published learning content.")
+      if (active) setPublishedModules(data.modules ?? [])
+    }).catch(error => { if (active) setContentError(error instanceof Error ? error.message : "Could not load published learning content.") })
+    return () => { active = false }
+  }, [])
 
   /*
    * Load prototype evidence from localStorage.
@@ -313,6 +327,12 @@ export default function LabPage() {
         </div>
       </section>
 
+
+      {publishedModules.length > 0 && <section className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div><p className="text-xs font-semibold uppercase tracking-[.16em] text-primary">Published learning paths</p><h2 className="mt-1 text-xl font-semibold">Course content</h2><p className="mt-1 text-sm text-muted-foreground">Lessons and resources published to FolioLabs appear here automatically.</p></div>
+        <div className="grid gap-4 md:grid-cols-2">{publishedModules.map(module => <article key={module.id} className="rounded-2xl border border-border bg-card p-5 transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"><p className="text-xs font-semibold uppercase tracking-wider text-primary">{module.subject}</p><h3 className="mt-2 text-lg font-semibold">{module.title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{module.description}</p><div className="mt-4 space-y-3">{module.units.map(unit => <details key={unit.id} className="group rounded-xl border border-border bg-background/60 p-3"><summary className="cursor-pointer list-none"><span className="flex items-center justify-between gap-3"><span><span className="block text-sm font-medium">{unit.title}</span><span className="mt-1 block text-[10px] uppercase tracking-wider text-muted-foreground">{unit.unit_type}</span></span><ChevronDown className="size-4 shrink-0 text-muted-foreground transition group-open:rotate-180"/></span></summary>{unit.summary && <p className="mt-3 text-sm leading-6 text-muted-foreground">{unit.summary}</p>}{unit.content_markdown && <div className="mt-3 whitespace-pre-wrap text-sm leading-7">{unit.content_markdown}</div>}{unit.content_config?.learning_outcome && <div className="mt-3 rounded-lg bg-primary/5 p-3"><p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Learning outcome</p><p className="mt-1 text-sm">{unit.content_config.learning_outcome}</p></div>}{unit.content_config?.weeks && <p className="mt-2 text-xs text-muted-foreground">Handout week(s): {unit.content_config.weeks}</p>}{unit.content_config?.references && <p className="mt-1 text-xs text-muted-foreground">Reference: {unit.content_config.references}</p>}{unit.resource_url && <a href={unit.resource_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-sm font-semibold text-primary hover:underline">Open resource ↗</a>}</details>)}</div>{module.units.length === 0 && <p className="mt-3 text-xs text-muted-foreground">Content is being prepared for this learning path.</p>}</article>)}</div>
+      </section>}
+      {contentError && <p className="rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground">Published course content is temporarily unavailable. The interactive simulator remains available.</p>}
 
       {/* =========================================================
           TOPIC INTRODUCTION

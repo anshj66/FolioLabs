@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import {
   MessageCircle, Briefcase, FlaskConical, LayoutDashboard, Award, BookOpen,
   Settings, Shield, Target, Sprout, BrainCircuit, ClipboardCheck,
-  MessageSquare, Users, LogOut, Search, Globe2, FolderKanban, GraduationCap, Coins,
+  MessageSquare, Users, LogOut, Search, Globe2, FolderKanban, GraduationCap,
   type LucideIcon,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
@@ -26,24 +26,32 @@ const memberNav: NavItem[] = [
   { label: "Greenhouse Engine", href: "/dashboard/academiclab", icon: Sprout, group: "Learn & Build" },
   { label: "Opportunities", href: "/dashboard/opportunities", icon: Target, group: "Prove & Launch" },
   { label: "Courses", href: "/dashboard/courses", icon: GraduationCap, group: "Learn & Build" },
-  { label: "Merit Credits", href: "/dashboard/merit-credits", icon: Coins, group: "Prove & Launch" },
   { label: "Defense", href: "/dashboard/defense", icon: Shield, group: "Prove & Launch" },
   { label: "Portfolio", href: "/dashboard/portfolio", icon: Award, group: "Prove & Launch" },
   { label: "Research", href: "/dashboard/research", icon: Search, group: "Prove & Launch" },
   { label: "Showcase", href: "/dashboard/showcase", icon: Globe2, group: "Prove & Launch" },
   { label: "Feedback", href: "/dashboard/feedback", icon: MessageSquare, group: "Collaborate & Validate" },
   { label: "Community Review", href: "/dashboard/community-review", icon: BookOpen, group: "Collaborate & Validate" },
-  { label: "Peer Review", href: "/dashboard/peer-review", icon: Users, group: "Collaborate & Validate" },
   { label: "Faculty Review", href: "/dashboard/faculty", icon: Award, group: "Collaborate & Validate" },
   { label: "Evidence", href: "/dashboard/evidence", icon: BookOpen, group: "Collaborate & Validate" },
   { label: "Community", href: "/dashboard/community", icon: Users, group: "Collaborate & Validate" },
   { label: "Messages", href: "/dashboard/messages", icon: MessageCircle, group: "Collaborate & Validate" },
   { label: "Settings", href: "/dashboard/settings", icon: Settings, group: "Account" },
 ]
+const professorNav: NavItem[] = [
+  { label: "Overview", href: "/dashboard", icon: LayoutDashboard, group: "Research" },
+  { label: "Courses & Students", href: "/dashboard/courses", icon: GraduationCap, group: "Teaching" },
+  { label: "Assessments", href: "/dashboard/assessment", icon: ClipboardCheck, group: "Teaching" },
+  { label: "Learning Lab", href: "/dashboard/lab", icon: FlaskConical, group: "Research" },
+  { label: "Research Insights", href: "/dashboard/feedback", icon: MessageSquare, group: "Research" },
+  { label: "Opportunities", href: "/dashboard/opportunities", icon: Target, group: "Community" },
+  { label: "Messages", href: "/dashboard/messages", icon: MessageCircle, group: "Community" },
+  { label: "Settings", href: "/dashboard/settings", icon: Settings, group: "Account" },
+]
 const adminNav: NavItem[] = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard, group: "Administration" },
   { label: "Credential Verification Requests", href: "/dashboard/admin/credentials", icon: Shield, group: "Administration" },
-  { label: "Students and Projects", href: "/dashboard/admin/students-projects", icon: FolderKanban, group: "Administration" },
+  { label: "Users and Projects", href: "/dashboard/admin/students-projects", icon: FolderKanban, group: "Administration" },
   { label: "Opportunities", href: "/dashboard/opportunities", icon: Target, group: "Administration" },
 ]
 
@@ -54,11 +62,13 @@ export function Sidebar({ user }: { user: User | null }) {
   const isAdmin = isAdminEmail(user?.email)
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [profileName, setProfileName] = useState("")
+  const [academicRole, setAcademicRole] = useState("")
+  const [roleLoaded, setRoleLoaded] = useState(false)
 
   useEffect(() => {
-    if (!user || isAdmin) return
+    if (!user || isAdmin) { setRoleLoaded(true); return }
     let mounted = true
-    fetch("/api/profile", { cache: "no-store" }).then(response => response.ok ? response.json() : null).then(data => { if (mounted && typeof data?.profile?.full_name === "string") setProfileName(data.profile.full_name.trim()) }).catch(() => {})
+    fetch("/api/profile", { cache: "no-store" }).then(response => response.ok ? response.json() : null).then(data => { if (mounted && typeof data?.profile?.full_name === "string") setProfileName(data.profile.full_name.trim()); if (mounted && typeof data?.profile?.academic_role === "string") setAcademicRole(data.profile.academic_role); if (mounted) setRoleLoaded(true) }).catch(() => { if (mounted) setRoleLoaded(true) })
     return () => { mounted = false }
   }, [isAdmin, user])
 
@@ -85,7 +95,8 @@ export function Sidebar({ user }: { user: User | null }) {
     router.refresh()
   }
 
-  const items = isAdmin ? adminNav : memberNav
+  const isProfessor = academicRole === "professor"
+  const items = isAdmin ? adminNav : !roleLoaded ? [] : isProfessor ? professorNav : memberNav
   const groups = [...new Set(items.map(item => item.group))]
 
   return (

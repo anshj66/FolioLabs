@@ -8,6 +8,8 @@ export async function GET() {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) return NextResponse.json({ error: "Please sign in to view Merit Credits." }, { status: 401 })
   if (isAdminEmail(user.email)) return NextResponse.json({ balance: 0, transactions: [], admin: true })
+  const { data: profile } = await supabase.from("profiles").select("academic_role").eq("id", user.id).maybeSingle()
+  if (profile?.academic_role === "professor") return NextResponse.json({ error: "Merit Credits are for student contribution workflows, not faculty accounts." }, { status: 403 })
   try {
     const service = createServiceClient()
     const { data, error: queryError } = await service.from("merit_credit_ledger").select("id,amount,event_type,source_type,source_id,idempotency_key,description,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100)

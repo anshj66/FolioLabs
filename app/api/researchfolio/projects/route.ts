@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 import { isAdminEmail } from "@/lib/admin"
 import { isApprovedAcademic } from "@/lib/platform/permissions"
 
@@ -101,6 +102,34 @@ export async function POST(request: NextRequest) {
     const json = JSON.stringify(body.project_data)
     if (json.length > 500_000) return NextResponse.json({ error: "This research draft is too large to save in one request." }, { status: 413 })
     updates.project_data = body.project_data
+  }
+
+  // A finalized section is immutable until eligible feedback arrives for that exact section.
+  // Once feedback unlocks it, a content change clears the active snapshot so it must be finalized again.
+  if (updates.project_data && typeof updates.project_data === "object") {
+    const service = createServiceClient()
+    const { data: currentProject, error: currentError } = await service.from("researchfolio_projects").select("id,project_data").eq("id", id).eq("user_id", user.id).maybeSingle()
+    if (currentError) return NextResponse.json({ error: "Could not verify the current section locks. Please retry." }, { status: 500 })
+    if (!currentProject) return NextResponse.json({ error: "Project not found or you do not have permission to edit it." }, { status: 404 })
+    const oldData = currentProject.project_data && typeof currentProject.project_data === "object" ? currentProject.project_data as Record<string, any> : {}
+    const nextData = updates.project_data as Record<string, any>
+    const oldSections = Array.isArray(oldData.sections) ? oldData.sections : []
+    const nextSections = Array.isArray(nextData.sections) ? nextData.sections : []
+    const oldLogs = oldData.sectionLogs && typeof oldData.sectionLogs === "object" ? oldData.sectionLogs : {}
+    const nextLogs = nextData.sectionLogs && typeof nextData.sectionLogs === "object" ? nextData.sectionLogs : {}
+    const changedFinalizedKeys = oldSections.filter((oldSection: any) => {
+      if (!oldSection || typeof oldSection.key !== "string" || !oldLogs[oldSection.key]?.finalizedAt) return false
+      const nextSection = nextSections.find((section: any) => section?.key === oldSection.key)
+      return !nextSection || nextSection.content !== oldSection.content || nextLogs[oldSection.key]?.finalizedAt !== oldLogs[oldSection.key].finalizedAt
+    }).map((section: any) => section.key)
+    for (const key of changedFinalizedKeys) {
+      const { data: feedbackRows, error: feedbackError } = await service.from("researchfolio_feedback").select("id").eq("project_id", id).eq("author_id", user.id).eq("section_key", key).gt("created_at", String(oldLogs[key].finalizedAt)).limit(1)
+      if (feedbackError) return NextResponse.json({ error: "Could not verify section feedback. Please retry." }, { status: 500 })
+      if (!feedbackRows?.length) return NextResponse.json({ error: `“${key.replaceAll("_", " ")}" is finalized and locked. It can be edited only after you receive feedback on that section.` }, { status: 409 })
+      nextLogs[key] = { ...(nextLogs[key] || {}), finalizedAt: null, finalizedContent: null, unlockedByFeedbackAt: new Date().toISOString() }
+    }
+    nextData.sectionLogs = nextLogs
+    updates.project_data = nextData
   }
 
   const { data: project, error } = await supabase.from("researchfolio_projects").update(updates).eq("id", id).eq("user_id", user.id).select("*").maybeSingle()
