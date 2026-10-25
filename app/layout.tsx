@@ -15,7 +15,6 @@ export const metadata: Metadata = {
   title: 'FolioLabs — Build your academic portfolio',
   description:
     'FolioLabs is a modern workspace to track projects, opportunities, and your verified academic portfolio.',
-  generator: 'v0.app',
   icons: {
     icon: '/icon.png',
     apple: '/apple-icon.png',
