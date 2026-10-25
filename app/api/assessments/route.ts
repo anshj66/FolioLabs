@@ -20,6 +20,7 @@ async function context() {
 export async function GET() {
   const { user, profile, service } = await context()
   if (!user) return NextResponse.json({ error: "Please sign in." }, { status: 401 })
+  if (!user.email_confirmed_at) return NextResponse.json({ error: "Verify your email before using FolioLabs." }, { status: 403 })
   if (isAdminEmail(user.email)) return NextResponse.json({ courses: [], assessments: [], admin: true })
   if (!isApprovedAcademic(profile)) return NextResponse.json({ error: "Your academic role must be approved first." }, { status: 403 })
   const role = normalizeAcademicRole(profile?.academic_role)
@@ -50,6 +51,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const { user, profile, service } = await context()
   if (!user) return NextResponse.json({ error: "Please sign in." }, { status: 401 })
+  if (!user.email_confirmed_at) return NextResponse.json({ error: "Verify your email before using FolioLabs." }, { status: 403 })
   if (isAdminEmail(user.email)) return NextResponse.json({ error: "Admin accounts cannot create or take academic assessments." }, { status: 403 })
   if (!isApprovedAcademic(profile) || normalizeAcademicRole(profile?.academic_role) !== "professor") return NextResponse.json({ error: "Only verified professors can create course assessments." }, { status: 403 })
   let body: any

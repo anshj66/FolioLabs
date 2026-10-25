@@ -27,6 +27,8 @@ export async function GET() {
       )
     }
 
+    if (!user.email_confirmed_at) return NextResponse.json({ error: "Verify your email before using FolioLabs." }, { status: 403 })
+
     const { data: profile, error } = await supabase
       .from("profiles")
       .select(
@@ -85,6 +87,8 @@ export async function PATCH(request: NextRequest) {
         { status: 401 }
       )
     }
+
+    if (!user.email_confirmed_at) return NextResponse.json({ error: "Verify your email before using FolioLabs." }, { status: 403 })
 
     const body = await request.json()
 

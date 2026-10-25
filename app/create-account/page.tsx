@@ -73,8 +73,6 @@ async function handleCreateAccount(e: React.FormEvent) {
       },
     })
 
-    console.log("Supabase signup:", data)
-
     if (error) {
       console.error("Supabase signup error:", error)
       setError(error.message)
@@ -89,9 +87,15 @@ async function handleCreateAccount(e: React.FormEvent) {
      * was returned because this page is specifically designed
      * around email verification.
      */
+    // Supabase may create a provisional Auth row before confirmation. If it
+    // returns a session without a verified email, discard that session so it
+    // cannot be used to enter the application before OTP verification.
+    if (data.session && !data.user?.email_confirmed_at) {
+      await supabase.auth.signOut()
+    }
     setShowOtp(true)
     setOtp("")
-    setMessage(`Verification code sent to ${email.trim()}.`)
+    setMessage(`Verification code sent to ${email.trim().toLowerCase()}. Your workspace will be enabled only after verification.`)
   } catch (err) {
     console.error(err)
 
@@ -117,19 +121,37 @@ async function handleVerifyOtp(e: React.FormEvent) {
   setLoading(true)
 
   try {
-    const { error } = await supabase.auth.verifyOtp({
+    const { data, error } = await supabase.auth.verifyOtp({
       email: email.trim().toLowerCase(),
       token: otp,
-      type: "email",
+      type: "signup",
     })
 
     if (error) {
-      console.error("OTP verification error:", error)
-      setError(error.message)
+      setError(error.message.includes("expired") ? "That code has expired. Request a new verification code." : "The verification code is invalid. Check it and try again.")
       return
     }
-
-    router.push("/dashboard")
+    const verifiedUser = data.user
+    if (!verifiedUser?.email_confirmed_at || verifiedUser.email?.toLowerCase() !== email.trim().toLowerCase()) {
+      await supabase.auth.signOut()
+      setError("Email verification could not be confirmed. Please request a new code and try again.")
+      return
+    }
+    // Create the application profile only after Supabase confirms the email.
+    const { error: profileError } = await supabase.from("profiles").upsert({
+      id: verifiedUser.id,
+      full_name: name.trim(),
+      role: "Student",
+      interests: [],
+      is_public: false,
+      verification_status: "pending_upload",
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "id" })
+    if (profileError) {
+      setError("Your email is verified, but profile setup did not finish. Please sign in again or contact support.")
+      return
+    }
+    router.push("/dashboard/onboarding")
     router.refresh()
   } catch (err) {
     console.error(err)
@@ -155,7 +177,6 @@ async function handleVerifyOtp(e: React.FormEvent) {
     })
 
     if (error) {
-      console.error("Resend OTP error:", error)
       setError(error.message)
       return
     }

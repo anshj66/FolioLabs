@@ -8,6 +8,7 @@ export const runtime = "nodejs"
 export async function GET(_request: NextRequest, context: { params: Promise<{ assessmentId: string }> }) {
   const session = await createClient(); const { data: { user } } = await session.auth.getUser()
   if (!user) return NextResponse.json({ error: "Please sign in." }, { status: 401 })
+  if (!user.email_confirmed_at) return NextResponse.json({ error: "Verify your email before using FolioLabs." }, { status: 403 })
   if (isAdminEmail(user.email)) return NextResponse.json({ error: "Admin accounts cannot take assessments." }, { status: 403 })
   const { data: profile } = await session.from("profiles").select("academic_role,verification_status").eq("id", user.id).maybeSingle()
   if (!isApprovedAcademic(profile) || normalizeAcademicRole(profile?.academic_role) === "professor") return NextResponse.json({ error: "Only approved student accounts can take course assessments." }, { status: 403 })
@@ -28,6 +29,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ as
 export async function POST(request: NextRequest, context: { params: Promise<{ assessmentId: string }> }) {
   const session = await createClient(); const { data: { user } } = await session.auth.getUser()
   if (!user) return NextResponse.json({ error: "Please sign in." }, { status: 401 })
+  if (!user.email_confirmed_at) return NextResponse.json({ error: "Verify your email before using FolioLabs." }, { status: 403 })
   if (isAdminEmail(user.email)) return NextResponse.json({ error: "Admin accounts cannot take assessments." }, { status: 403 })
   const { data: profile } = await session.from("profiles").select("academic_role,verification_status").eq("id", user.id).maybeSingle()
   if (!isApprovedAcademic(profile) || normalizeAcademicRole(profile?.academic_role) === "professor") return NextResponse.json({ error: "Only approved student accounts can take assessments." }, { status: 403 })

@@ -10,6 +10,7 @@ export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "Sign in required." }, { status: 401 })
+  if (!user.email_confirmed_at) return NextResponse.json({ error: "Verify your email before using FolioLabs." }, { status: 403 })
   if (isAdminEmail(user.email)) return NextResponse.json({ error: "Administrator accounts do not submit student credentials." }, { status: 403 })
   const { data, error } = await supabase.from("credential_submissions").select("id, credential_type, institution, status, admin_note, created_at, reviewed_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
   if (error) return NextResponse.json({ error: "Could not load credential status. Apply the credential-verification SQL migration first." }, { status: 500 })
@@ -20,6 +21,7 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "Sign in required." }, { status: 401 })
+  if (!user.email_confirmed_at) return NextResponse.json({ error: "Verify your email before using FolioLabs." }, { status: 403 })
   if (isAdminEmail(user.email)) return NextResponse.json({ error: "Administrator accounts do not submit student credentials." }, { status: 403 })
   try {
     const body = await request.json()

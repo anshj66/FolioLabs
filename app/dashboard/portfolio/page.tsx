@@ -11,7 +11,7 @@ export default async function PortfolioPage() {
   const session = await createClient(); const { data: { user } } = await session.auth.getUser()
   if (!user) redirect("/signin")
   if (isAdminEmail(user.email)) redirect("/dashboard")
-  const { data: profile } = await session.from("profiles").select("full_name,academic_role,academic_year,verification_status,institution,field_of_study,introduction").eq("id", user.id).maybeSingle()
+  const { data: profile } = await session.from("profiles").select("full_name,academic_role,academic_year,verification_status,introduction").eq("id", user.id).maybeSingle()
   if (normalizeAcademicRole(profile?.academic_role) === "professor") redirect("/dashboard")
   if (!isApprovedAcademic(profile)) redirect("/dashboard/onboarding")
   const service = createServiceClient()
