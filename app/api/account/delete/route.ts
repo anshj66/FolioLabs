@@ -69,9 +69,27 @@ export async function POST(request: NextRequest) {
   if(admin && target===user.id)return NextResponse.json({error:"The designated administrator account is protected from self-deletion. Transfer admin ownership first."},{status:409})
   if(!admin && target!==user.id)return NextResponse.json({error:"You can only delete your own account."},{status:403})
   // Require a recent sign-in as a practical reauthentication check.
-  const signedInAt=user.last_sign_in_at?Date.parse(user.last_sign_in_at):0
-  if(!Number.isFinite(signedInAt)||Date.now()-signedInAt>15*60_000)return NextResponse.json({error:"For security, sign out and sign in again before deleting this account."},{status:403})
-  const service=createServiceClient()
+// Require recent authentication for personal account deletion.
+// Admins deleting other users must still be authenticated and
+// explicitly confirm the deletion.
+if (!admin || target === user.id) {
+  const signedInAt = user.last_sign_in_at
+    ? Date.parse(user.last_sign_in_at)
+    : 0
+
+  if (
+    !Number.isFinite(signedInAt) ||
+    Date.now() - signedInAt > 15 * 60_000
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "For security, sign out and sign in again before deleting this account.",
+      },
+      { status: 403 }
+    )
+  }
+}  const service=createServiceClient()
   const {data:targetUser}=await service.auth.admin.getUserById(target)
   if(!targetUser.user)return NextResponse.json({error:"Account not found."},{status:404})
   if(isAdminEmail(targetUser.user.email)&&target!==user.id)return NextResponse.json({error:"The designated administrator account cannot be deleted through user management."},{status:409})

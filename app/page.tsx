@@ -64,8 +64,18 @@ export default function WelcomePage() {
       <article className="challenge-card"><div className="challenge-card-head"><span className="challenge-tag"><span/> {challenge.tag}</span><span className="challenge-time">~ 60 SEC</span></div><h3>{challenge.title}</h3><p className="challenge-question">{challenge.body}</p><div className="challenge-options">{challenge.options.map((option, index) => <button key={option} onClick={() => setSelected(index)} className={`challenge-option ${selected === index ? 'option-selected' : ''} ${selected !== null && index === challenge.answer ? 'option-correct' : ''}`}><span className="option-letter">{String.fromCharCode(65 + index)}</span><span>{option}</span>{selected !== null && index === challenge.answer ? <Check size={17}/> : <ChevronRight size={16}/>}</button>)}</div>{selected !== null && <div className="challenge-feedback"><span className="feedback-icon"><Lightbulb size={16}/></span><div><strong>{selected === challenge.answer ? 'Good thinking.' : 'Here is one way to look at it.'}</strong><p>{challenge.why}</p></div></div>}<div className="challenge-card-foot"><span>THERE IS ALWAYS MORE THAN ONE WAY TO THINK.</span><button onClick={nextChallenge}>Next question <ArrowRight size={15}/></button></div></article>
     </section>
 
-    <section id="community" className="community-section"><div className="community-glow" aria-hidden="true"/><div className="community-inner"><div className="community-symbol"><Users size={25}/><span/><span/><span/></div><div className="section-kicker">BUILT FOR THE IN-BETWEEN</div><h2>Your next idea could<br/>start <span>with a question.</span></h2><p>We’re shaping a space where students can share what they’re learning, get thoughtful feedback, and make progress together. What should we explore next?</p><a href="mailto:hello@foliolabs.com?subject=FolioLabs%20community%20idea" className="community-cta">Suggest a community challenge <MoveUpRight size={16}/></a><span className="community-note">Real questions. Real work. Progress you can see.</span></div></section>
+    <section id="community" className="community-section"><div className="community-glow" aria-hidden="true"/><div className="community-inner"><div className="community-symbol"><Users size={25}/><span/><span/><span/></div><div className="section-kicker">BUILT FOR THE IN-BETWEEN</div><h2>Your next idea could<br/>start <span>with a question.</span></h2><p>We’re shaping a space where students can share what they’re learning, get thoughtful feedback, and make progress together. What should we explore next?</p><a href="mailto:ansh.jain@foliolabs.tech?subject=FolioLabs%20community%20idea" className="community-cta">Suggest a community challenge <MoveUpRight size={16}/></a><span className="community-note">Real questions. Real work. Progress you can see.</span></div></section>
 
-    <footer className="welcome-footer"><Link href="#top" className="footer-brand"><Logo/></Link><p>Make the work visible.</p><div><a href="#approach">Our approach</a><a href="#challenge">Try a challenge</a><Link href="/competitions">Competitions</Link><Link href="/signup">Sign in</Link></div><span>© {new Date().getFullYear()} FolioLabs</span></footer>
+    <footer className="welcome-footer">
+      <Link href="#top" className="footer-brand"><Logo /></Link>
+      <p>Make the work visible.</p>
+      <div className="welcome-footer-nav"><a href="#approach">Our approach</a><a href="#challenge">Try a challenge</a><Link href="/competitions">Competitions</Link><Link href="/signup">Sign in</Link></div>
+      <div className="welcome-social-links" aria-label="Contact and social links">
+        <a href="mailto:ansh.jain@foliolabs.tech">ansh.jain@foliolabs.tech</a>
+        <a href="https://www.instagram.com/foliolabs.tech/" target="_blank" rel="noreferrer">Instagram · @foliolabs.tech</a>
+        <a href="https://www.linkedin.com/company/foliolabs-ai/" target="_blank" rel="noreferrer">LinkedIn</a>
+      </div>
+      <span>© {new Date().getFullYear()} FolioLabs</span>
+    </footer>
   </main>
 }

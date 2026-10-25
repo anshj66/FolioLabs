@@ -2,6 +2,8 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
+import { DotGridCursor } from '@/components/dot-grid-cursor'
+import { ScrollReveal } from '@/components/scroll-reveal'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 const geistMono = Geist_Mono({
@@ -37,6 +39,8 @@ export default function RootLayout({
     >
       <body className="bg-background font-sans antialiased">
         {children}
+        <DotGridCursor />
+        <ScrollReveal />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

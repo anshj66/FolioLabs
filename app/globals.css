@@ -137,3 +137,46 @@
 @media(max-width:900px){.welcome-hero{grid-template-columns:1fr;padding-top:75px;padding-bottom:80px}.hero-copy{max-width:700px}.hero-visual{height:440px;margin-top:10px}.hero-orbit{right:50%;transform:translate(50%,-50%)}.visual-label{right:10%}.approach-heading{align-items:flex-start;flex-direction:column;gap:20px}.approach-heading>p{max-width:600px}.challenge-section{grid-template-columns:1fr;gap:40px}.challenge-intro>p{max-width:600px}.challenge-progress{margin-top:25px}}
 @media(max-width:600px){.welcome-nav{height:70px;padding:0 5%}.welcome-brand svg{max-width:120px}.welcome-nav-cta{padding:10px 12px;font-size:10px}.welcome-signin{font-size:11px}.welcome-nav>div{gap:10px}.welcome-hero{padding:62px 6% 75px;min-height:unset}.welcome-hero h1{font-size:clamp(3.3rem,15vw,5rem)}.hero-description{font-size:13px}.hero-actions{gap:17px;align-items:flex-start;flex-direction:column}.hero-proof{margin-top:35px}.hero-visual{height:370px;transform:scale(.87);transform-origin:top center;margin-bottom:-35px}.hero-orbit{width:420px;height:420px}.orbit-two{width:340px;height:340px}.orbit-three{width:260px;height:260px}.visual-core{transform:scale(.85)}.card-experiment{left:-15px}.card-reflection{right:-15px}.card-evidence{left:-5px}.visual-label{right:0;top:0}.hero-scroll{bottom:20px;white-space:nowrap}.approach-section{padding-top:75px;padding-bottom:80px}.approach-heading h2,.challenge-intro h2,.community-inner h2{font-size:clamp(2.6rem,12vw,4rem)}.pillar-grid{grid-template-columns:1fr;margin-top:35px}.pillar-card{min-height:195px}.pillar-card h3{margin-top:26px}.challenge-section{padding-top:70px;padding-bottom:80px}.challenge-card{padding:19px;border-radius:16px}.challenge-card h3{font-size:22px}.challenge-card-foot{align-items:flex-start;flex-direction:column}.community-inner{padding:75px 7%}.welcome-footer{padding:24px 6%;flex-wrap:wrap}.welcome-footer p{display:none}.welcome-footer>div{gap:13px}.welcome-footer>div a{font-size:9px}.welcome-footer>span{width:100%;font-size:9px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+
+/* Minimal circular cursor: rendered only around the pointer, never in the page background. */
+.circular-cursor {
+  position: fixed;
+  inset: 0 auto auto 0;
+  z-index: 99999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 140ms ease;
+  will-change: opacity;
+}
+
+@media (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  html.has-circular-cursor,
+  html.has-circular-cursor body,
+  html.has-circular-cursor body * {
+    cursor: none !important;
+  }
+}
+
+/* Scroll-triggered reveal; only elements entering the viewport animate. */
+.scroll-reveal {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+  transition: opacity 650ms cubic-bezier(.2,.7,.2,1), transform 650ms cubic-bezier(.2,.7,.2,1);
+  will-change: opacity, transform;
+}
+.scroll-reveal.scroll-reveal-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .circular-cursor { display: none !important; }
+  .scroll-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+}
+
+@media (pointer: coarse) {
+  .circular-cursor { display: none !important; }
+}
+
+.welcome-social-links{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap}.welcome-social-links a{font-size:10px;color:#9aa89f;transition:color .2s}.welcome-social-links a:hover{color:#a5f3cf}@media(max-width:900px){.welcome-social-links{width:100%;justify-content:flex-start;gap:12px}}
